@@ -1,0 +1,26 @@
+{
+  "name": "teamradar",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonaselmlund/teamradar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonaselmlund/teamradar/issues"
+  },
+  "homepage": "https://github.com/jonaselmlund/teamradar#readme",
+  "dependencies": {
+    "expo": "^52.0.37",
+    "setimmediate": "^1.0.5"
+  }
+}
