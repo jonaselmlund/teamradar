@@ -1,11 +1,24 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native';
-import Navigation from './navigation/Navigation'; // Importera din Navigation-komponent
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import UsernameScreen from './screens/usernameScreen';
+import TeamScreen from './screens/TeamScreen';
+import MapScreen from './screens/mapScreen';  // Import MapScreen
+import ChatScreen from './screens/chatScreen';  // Import ChatScreen
 
-export default function App() {
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-           <Navigation />  {/* Render the Navigation component */}
-        </SafeAreaView>
-  );
-}
+const Stack = createStackNavigator();
+
+const App = () => {
+    return (
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="UsernameScreen">
+                <Stack.Screen name="UsernameScreen" component={UsernameScreen} />
+                <Stack.Screen name="TeamScreen" component={TeamScreen} />
+                <Stack.Screen name="MapScreen" component={MapScreen} />  {/* Add MapScreen to navigator */}
+                <Stack.Screen name="ChatScreen" component={ChatScreen} />  {/* Add ChatScreen to navigator */}
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+};
+
+export default App;

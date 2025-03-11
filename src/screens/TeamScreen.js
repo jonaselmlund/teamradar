@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, FlatList, Switch, Alert } from "react-native";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig"; // 🔥 Importera Firestore
-import { getNameFromLocalStorage, clearLocalStorage } from '../utils/handleName'; // Kontrollera denna sökväg
-import { doc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const [user, setUser] = useState(null);
+
 
 const TeamScreen = () => {
+  
   const [teamName, setTeamName] = useState("");
   const [inactiveHoursStart, setInactiveHoursStart] = useState(22);
   const [inactiveHoursEnd, setInactiveHoursEnd] = useState(7);

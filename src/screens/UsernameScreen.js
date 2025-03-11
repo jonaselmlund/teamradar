@@ -5,7 +5,11 @@ import tw from 'twrnc';
 import { useNavigation } from '@react-navigation/native';  // Import useNavigation hook
 import { firebase } from '../firebaseConfig'; // Import Firebase configuration
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../firebaseConfig';  // Justera till rätt sökväg
 import { v4 as uuidv4 } from 'uuid'; // Importera UUID-generator
+import uuid from 'react-native-uuid';
+import { collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -24,13 +28,13 @@ const UsernameScreen = () => {
                     console.log('Ingen userId hittad i local storage');
                     return;
                 }
-    
-                const userRef = firebase.firestore().collection('users').doc(storedUserId);
-                const doc = await userRef.get();
-    
-                if (doc.exists) {
-                    setStoredName(doc.data().username);
-                    console.log('Hämtat namn från Firestore:', doc.data().username);
+
+                const userRef = doc(db, 'users', storedUserId);  // Korrigera här
+                const docSnap = await getDoc(userRef);  // Korrigera här
+
+                if (docSnap.exists()) {
+                    setStoredName(docSnap.data().username);
+                    console.log('Hämtat namn från Firestore:', docSnap.data().username);
                 } else {
                     console.log('Inget användarnamn hittat i Firestore');
                 }
@@ -41,7 +45,7 @@ const UsernameScreen = () => {
     
         fetchUsernameFromFirestore();
     }, []);
-  
+
 
     const handleSaveName = async () => {
         try {
@@ -50,14 +54,14 @@ const UsernameScreen = () => {
     
             if (!storedUserId) {
                 // Generera ett nytt unikt ID om inget finns
-                storedUserId = uuidv4();
+                storedUserId = uuid.v4();
                 await AsyncStorage.setItem('userId', storedUserId);
                 console.log('Genererade nytt userId:', storedUserId);
             }
     
             // Spara användaruppgifterna i Firestore under det genererade userId
-            const userRef = firebase.firestore().collection('users').doc(storedUserId);
-            await userRef.set({
+            const userRef = doc(db, 'users', storedUserId);  // Korrigera här
+            await setDoc(userRef, {
                 username,
                 notificationSetting,
                 chatNotificationSetting
@@ -70,6 +74,7 @@ const UsernameScreen = () => {
             console.error('Fel vid sparande av namn:', error);
         }
     };
+
     const handleResetApp = async () => {
         try {
             // Hämta userId från Local Storage
@@ -81,8 +86,8 @@ const UsernameScreen = () => {
             }
     
             // Ta bort användaren från Firestore
-            const userRef = firebase.firestore().collection('users').doc(storedUserId);
-            await userRef.delete();
+            const userRef = doc(db, 'users', storedUserId);  // Korrigera här
+            await deleteDoc(userRef);  // Korrigera här
             console.log(`Användare ${storedUserId} raderad från Firestore.`);
     
             // Rensa Local Storage
@@ -99,8 +104,6 @@ const UsernameScreen = () => {
             console.error('Fel vid reset av app:', error);
         }
     };
-    
-  
 
     return (
         <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
@@ -137,9 +140,10 @@ const UsernameScreen = () => {
                     </TouchableOpacity>
                 </>
             )}
-            <Text>
-                <Button title="Hantera Team" onPress={() => navigation.navigate("TeamScreen")} />
-            </Text>
+            
+            <Button title="Hantera Team" onPress={() => navigation.navigate("TeamScreen")} />
+            <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />  {/* New button to navigate to MapScreen */}
+            
             <TouchableOpacity
                 style={tw`bg-red-500 p-4 rounded-lg shadow-md w-full max-w-md mt-4`}
                 onPress={handleResetApp}
