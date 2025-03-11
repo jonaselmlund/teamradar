@@ -1,6 +1,6 @@
 import 'setimmediate';
 import { registerRootComponent } from "expo";
-import App from "./App";
+import App from "./src/App";
 
 registerRootComponent(App);
 if (typeof global.setImmediate === 'undefined') {
