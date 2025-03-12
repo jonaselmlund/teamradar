@@ -3,6 +3,7 @@ import { View, TextInput, Button, FlatList, Text, StyleSheet } from 'react-nativ
 import { firebase } from '../firebaseConfig'; // Import Firebase configuration
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';  // Adjust to correct path
+import { useNavigation } from '@react-navigation/native';
 
 const ChatScreen = () => {
     const [message, setMessage] = useState('');

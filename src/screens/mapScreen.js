@@ -14,7 +14,16 @@ const MapScreen = () => {
             try {
                 const querySnapshot = await getDocs(collection(db, 'users'));
                 const usersData = querySnapshot.docs.map(doc => doc.data());
-                setUsers(usersData);
+
+                console.log("Fetched Users:", usersData);
+
+                const validUsers = usersData.filter(user => 
+                    user.latitude !== undefined &&
+                    user.longitude !== undefined &&
+                    !isNaN(user.latitude) &&
+                    !isNaN(user.longitude)
+                );
+                setUsers(validUsers);
             } catch (error) {
                 console.error('Error fetching users:', error);
             }

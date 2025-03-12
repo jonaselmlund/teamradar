@@ -108,7 +108,8 @@ const UsernameScreen = () => {
     return (
         <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
             {storedName ? (
-                <Text style={tw`text-xl mb-4`}>Välkommen tillbaka, {storedName}!</Text>
+                <Text style={tw`text-xl mb-4`}>Välkommen tillbaka, {storedName}</Text>
+              
             ) : (
                 <>
                     <Text style={tw`text-xl mb-4`}>Inget namn sparat än.</Text>
