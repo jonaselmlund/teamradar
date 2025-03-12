@@ -5,10 +5,9 @@ import { useNavigation } from '@react-navigation/native';  // Import useNavigati
 import { firebase } from '../firebaseConfig'; // Import Firebase configuration
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../firebaseConfig';  // Justera till rätt sökväg
-import { v4 as uuidv4 } from 'uuid'; // Importera UUID-generator
 import uuid from 'react-native-uuid';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { Camera } from 'expo-camera'; // Import Camera from expo-camera
+import { Camera } from 'expo-camera';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -17,6 +16,7 @@ const UsernameScreen = () => {
     const [notificationSetting, setNotificationSetting] = useState(false);
     const [chatNotificationSetting, setChatNotificationSetting] = useState(false);
     const [team, setTeam] = useState(null);
+    const [teamName, setTeamName] = useState('');
     const [scanning, setScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState(null);
     const [teamCodeInput, setTeamCodeInput] = useState('');
@@ -37,7 +37,15 @@ const UsernameScreen = () => {
 
                 if (docSnap.exists()) {
                     setStoredName(docSnap.data().username);
-                    setTeam(docSnap.data().teamId ? docSnap.data().teamId : null);
+                    const teamId = docSnap.data().teamId ? docSnap.data().teamId : null;
+                    setTeam(teamId);
+                    if (teamId) {
+                        const teamRef = doc(db, 'teams', teamId);
+                        const teamSnap = await getDoc(teamRef);
+                        if (teamSnap.exists()) {
+                            setTeamName(teamSnap.data().name);
+                        }
+                    }
                     console.log('Hämtat namn från Firestore:', docSnap.data().username);
                 } else {
                     console.log('Inget användarnamn hittat i Firestore');
@@ -57,7 +65,7 @@ const UsernameScreen = () => {
     
             if (!storedUserId) {
                 // Generera ett nytt unikt ID om inget finns
-                storedUserId = uuid.v4();
+                storedUserId = uuid.v4().toString();
                 await AsyncStorage.setItem('userId', storedUserId);
                 console.log('Genererade nytt userId:', storedUserId);
             }
@@ -102,6 +110,7 @@ const UsernameScreen = () => {
             setUsername('');
             setUserId(null);
             setTeam(null);
+            setTeamName('');
     
             console.log('Local Storage rensat.');
         } catch (error) {
@@ -125,6 +134,7 @@ const UsernameScreen = () => {
 
                 alert("Gick med i teamet!");
                 setTeam(teamCodeInput);
+                setTeamName(teamDoc.data().name);
             } else {
                 alert("Team-koden är ogiltig!");
             }
@@ -138,13 +148,17 @@ const UsernameScreen = () => {
         try {
             const teamDoc = await getDoc(doc(db, "teams", data));
             if (teamDoc.exists()) {
+                if (!userId) {
+                    alert("Användar-ID saknas. Kan inte gå med i teamet.");
+                    return;
+                }
                 await updateDoc(doc(db, "users", userId), {
                     teamId: data,
                     isAdmin: false
                 });
-
                 alert("Gick med i teamet!");
                 setTeam(data);
+                setTeamName(teamDoc.data().name);
             } else {
                 alert("Team-koden är ogiltig!");
             }
@@ -152,11 +166,16 @@ const UsernameScreen = () => {
             console.error("Fel vid anslutning till team:", error);
         }
     };
-
+    
     useEffect(() => {
         (async () => {
-            const { status } = await Camera.requestPermissionsAsync();
-            setHasPermission(status === 'granted');
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            if (status === 'granted') {
+                setHasPermission(true);
+            } else {
+                setHasPermission(false);
+                Alert.alert('Camera permission is required to scan the QR code');
+            }
         })();
     }, []);
 
@@ -175,7 +194,7 @@ const UsernameScreen = () => {
                 <>
                     <Text style={tw`text-xl mb-4`}>Välkommen, {storedName || "Gäst" }</Text>
                     {team ? (
-                        <Text style={tw`text-lg mb-4`}>Du är med i team: {team}</Text>
+                        <Text style={tw`text-lg mb-4`}>Du är med i team: {teamName}</Text>
                     ) : (
                         <>
                             <TouchableOpacity
@@ -232,7 +251,7 @@ const UsernameScreen = () => {
                 </>
             )}
             
-            <Button title="Hantera Team" onPress={() => navigation.navigate("TeamScreen")} />
+            <Button title="Hantera eller skapa team" onPress={() => navigation.navigate("TeamScreen")} />
 
             <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} /> 
             

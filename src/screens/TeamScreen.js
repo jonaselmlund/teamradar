@@ -56,6 +56,7 @@ const TeamScreen = () => {
     if (teamDoc.exists()) {
         setTeam({ id: teamDoc.id, ...teamDoc.data() }); // 🔥 Lägg till ID!
         fetchMembers(teamId);
+        console.log("Teamdata hämtad:", teamDoc.data());
     }
 };
 
