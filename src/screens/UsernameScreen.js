@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch } from 'react-native';
-import { TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import tw from 'twrnc';
 import { useNavigation } from '@react-navigation/native';  // Import useNavigation hook
 import { firebase } from '../firebaseConfig'; // Import Firebase configuration
@@ -9,7 +8,7 @@ import { db } from '../firebaseConfig';  // Justera till rätt sökväg
 import { v4 as uuidv4 } from 'uuid'; // Importera UUID-generator
 import uuid from 'react-native-uuid';
 import { collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-
+import { BarCodeScanner } from 'expo-barcode-scanner'; // Assuming you have a barcode scanner library installed
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -17,6 +16,10 @@ const UsernameScreen = () => {
     const [userId, setUserId] = useState(null);
     const [notificationSetting, setNotificationSetting] = useState(false);
     const [chatNotificationSetting, setChatNotificationSetting] = useState(false);
+    const [team, setTeam] = useState(null);
+    const [scanning, setScanning] = useState(false);
+    const [hasPermission, setHasPermission] = useState(null);
+    const [teamCodeInput, setTeamCodeInput] = useState('');
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -34,6 +37,7 @@ const UsernameScreen = () => {
 
                 if (docSnap.exists()) {
                     setStoredName(docSnap.data().username);
+                    setTeam(docSnap.data().teamId ? docSnap.data().teamId : null);
                     console.log('Hämtat namn från Firestore:', docSnap.data().username);
                 } else {
                     console.log('Inget användarnamn hittat i Firestore');
@@ -45,7 +49,6 @@ const UsernameScreen = () => {
     
         fetchUsernameFromFirestore();
     }, []);
-
 
     const handleSaveName = async () => {
         try {
@@ -98,6 +101,7 @@ const UsernameScreen = () => {
             setStoredName(null);
             setUsername('');
             setUserId(null);
+            setTeam(null);
     
             console.log('Local Storage rensat.');
         } catch (error) {
@@ -105,11 +109,97 @@ const UsernameScreen = () => {
         }
     };
 
+    const handleJoinTeamWithCode = async () => {
+        if (!teamCodeInput.trim()) {
+            alert("Ange en team-kod!");
+            return;
+        }
+
+        try {
+            const teamDoc = await getDoc(doc(db, "teams", teamCodeInput));
+            if (teamDoc.exists()) {
+                await updateDoc(doc(db, "users", userId), {
+                    teamId: teamCodeInput,
+                    isAdmin: false
+                });
+
+                alert("Gick med i teamet!");
+                setTeam(teamCodeInput);
+            } else {
+                alert("Team-koden är ogiltig!");
+            }
+        } catch (error) {
+            console.error("Fel vid anslutning till team:", error);
+        }
+    };
+
+    const handleBarCodeScanned = async ({ type, data }) => {
+        setScanning(false);
+        try {
+            const teamDoc = await getDoc(doc(db, "teams", data));
+            if (teamDoc.exists()) {
+                await updateDoc(doc(db, "users", userId), {
+                    teamId: data,
+                    isAdmin: false
+                });
+
+                alert("Gick med i teamet!");
+                setTeam(data);
+            } else {
+                alert("Team-koden är ogiltig!");
+            }
+        } catch (error) {
+            console.error("Fel vid anslutning till team:", error);
+        }
+    };
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await BarCodeScanner.requestPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
+
+    if (scanning) {
+        return (
+            <BarCodeScanner
+                onBarCodeScanned={handleBarCodeScanned}
+                style={StyleSheet.absoluteFillObject}
+            />
+        );
+    }
+
     return (
         <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
             {storedName ? (
-                <Text style={tw`text-xl mb-4`}>Välkommen tillbaka, {storedName}</Text>
-              
+                <>
+                    <Text style={tw`text-xl mb-4`}>Välkommen, {storedName || "Gäst" }</Text>
+                    {team ? (
+                        <Text style={tw`text-lg mb-4`}>Du är med i team: {team}</Text>
+                    ) : (
+                        <>
+                            <TouchableOpacity
+                                style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md mb-4`}
+                                onPress={() => setScanning(true)}
+                            >
+                                <Text style={tw`text-white text-center text-lg font-semibold`}>Gå med i team via QR-kod</Text>
+                            </TouchableOpacity>
+                            <TextInput
+                                style={tw`border border-gray-400 rounded-lg p-4 mb-4 w-full max-w-md`}
+                                placeholder="Ange team-kod"
+                                value={teamCodeInput}
+                                onChangeText={setTeamCodeInput}
+                                keyboardType="numeric"
+                            />
+                            <TouchableOpacity
+                                style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md`}
+                                onPress={handleJoinTeamWithCode}
+                            >
+                                <Text style={tw`text-white text-center text-lg font-semibold`}>Gå med i team med kod</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </>
             ) : (
                 <>
                     <Text style={tw`text-xl mb-4`}>Inget namn sparat än.</Text>
@@ -120,14 +210,14 @@ const UsernameScreen = () => {
                         onChangeText={setUsername}
                     />
                     <View style={tw`flex-row justify-between items-center mb-4 w-full max-w-md`}>
-                        <Text style={tw`text-lg`}>Notification Setting</Text>
+                        <Text style={tw`text-lg`}>Allmäna notifieringar på?</Text>
                         <Switch
                             value={notificationSetting}
                             onValueChange={setNotificationSetting}
                         />
                     </View>
                     <View style={tw`flex-row justify-between items-center mb-4 w-full max-w-md`}>
-                        <Text style={tw`text-lg`}>Chat Notification Setting</Text>
+                        <Text style={tw`text-lg`}>Notifieringar från chat på?</Text>
                         <Switch
                             value={chatNotificationSetting}
                             onValueChange={setChatNotificationSetting}
@@ -143,7 +233,8 @@ const UsernameScreen = () => {
             )}
             
             <Button title="Hantera Team" onPress={() => navigation.navigate("TeamScreen")} />
-            <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />  {/* New button to navigate to MapScreen */}
+
+            <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} /> 
             
             <TouchableOpacity
                 style={tw`bg-red-500 p-4 rounded-lg shadow-md w-full max-w-md mt-4`}

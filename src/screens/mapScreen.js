@@ -38,8 +38,8 @@ const MapScreen = () => {
                 provider="google"
                 style={styles.map}
                 initialRegion={{
-                    latitude: 37.78825,
-                    longitude: -122.4324,
+                    latitude: 59.326242,
+                    longitude: 18.071665,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
