@@ -135,9 +135,10 @@ const UsernameScreen = () => {
     };
 
     const handleBarCodeScanned = async ({ type, data }) => {
+        console.log(`PLACE !`);
         setScanning(false);
         try {
-            console.log('Scanned Data:', data);
+            console.log(`Scanned barcode of type ${type} with data: ${data}`);
             const teamDoc = await getDoc(doc(db, "teams", data));
             if (teamDoc.exists()) {
                 if (!userId) {
@@ -174,6 +175,7 @@ const UsernameScreen = () => {
     }, []);
 
     if (scanning) {
+        console.log('Scanning QR code...');
         return (
             <Camera
                 onBarCodeScanned={handleBarCodeScanned}
@@ -193,7 +195,8 @@ const UsernameScreen = () => {
                         <>
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md mb-4`}
-                                onPress={() => setScanning(true)}
+                                //onPress={() => setScanning(true)
+                                onPress={() => Alert.alert("Funktionen är inte implementerad ännu.")}
                             >
                                 <Text style={tw`text-white text-center text-lg font-semibold`}>Gå med i team via QR-kod</Text>
                             </TouchableOpacity>

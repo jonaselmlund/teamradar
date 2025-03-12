@@ -58,7 +58,7 @@ const TeamScreen = () => {
         fetchMembers(teamId);
         console.log("Teamdata hämtad:", teamDoc.data());
     }
-};
+  };
 
   const fetchMembers = (teamId) => {
     const unsubscribe = onSnapshot(collection(db, "teams", teamId, "members"), (snapshot) => {
@@ -168,7 +168,41 @@ const TeamScreen = () => {
     } catch (error) {
         console.error("Fel vid radering av team:", error);
     }
-};
+  };
+
+  const createTestUser = async () => {
+    const generateRandomUsername = () => {
+      const letters = 'abcdefghijklmnopqrstuvwxyz';
+      let username = '';
+      for (let i = 0; i < 4; i++) {
+        username += letters[Math.floor(Math.random() * letters.length)];
+      }
+      return username + '-test-user';
+    };
+
+    const testUser = {
+      username: generateRandomUsername(),
+      notificationSetting: true,
+      chatNotificationSetting: true,
+      latitude: 59.6498,
+      longitude: 17.9238,
+      teamId: team.id,
+      isAdmin: false
+    };
+
+    try {
+      const testUserRef = await addDoc(collection(db, "users"), testUser);
+      await addDoc(collection(db, "teams", team.id, "members"), {
+        userId: testUserRef.id,
+        username: testUser.username,
+        isAdmin: false
+      });
+
+      alert("Testanvändare skapad och tillagd i teamet!");
+    } catch (error) {
+      console.error("Fel vid skapande av testanvändare:", error);
+    }
+  };
 
   if (team) {
     return (
@@ -193,7 +227,8 @@ const TeamScreen = () => {
           )}
         />
         <Button title="Radera Team" onPress={deleteTeam} />
-        <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />              
+        <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />
+        <Button title="Skapa Testanvändare" onPress={createTestUser} />
       </View>
     );
   }
