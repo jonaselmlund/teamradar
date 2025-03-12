@@ -7,8 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../firebaseConfig';  // Justera till rätt sökväg
 import { v4 as uuidv4 } from 'uuid'; // Importera UUID-generator
 import uuid from 'react-native-uuid';
-import { collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { BarCodeScanner } from 'expo-barcode-scanner'; // Assuming you have a barcode scanner library installed
+import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { Camera } from 'expo-camera'; // Import Camera from expo-camera
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -155,14 +155,14 @@ const UsernameScreen = () => {
 
     useEffect(() => {
         (async () => {
-            const { status } = await BarCodeScanner.requestPermissionsAsync();
+            const { status } = await Camera.requestPermissionsAsync();
             setHasPermission(status === 'granted');
         })();
     }, []);
 
     if (scanning) {
         return (
-            <BarCodeScanner
+            <Camera
                 onBarCodeScanned={handleBarCodeScanned}
                 style={StyleSheet.absoluteFillObject}
             />
