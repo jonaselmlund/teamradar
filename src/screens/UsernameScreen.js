@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import tw from 'twrnc';
-import { useNavigation } from '@react-navigation/native';  // Import useNavigation hook
-import { firebase } from '../firebaseConfig'; // Import Firebase configuration
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../firebaseConfig';  // Justera till rätt sökväg
+import { db } from '../firebaseConfig';
 import uuid from 'react-native-uuid';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Camera } from 'expo-camera';
@@ -25,15 +24,15 @@ const UsernameScreen = () => {
     useEffect(() => {
         const fetchUsernameFromFirestore = async () => {
             try {
-                const storedUserId = await AsyncStorage.getItem('userId'); // Hämta userId från local storage
+                const storedUserId = await AsyncStorage.getItem('userId');
                 
                 if (!storedUserId) {
                     console.log('Ingen userId hittad i local storage');
                     return;
                 }
 
-                const userRef = doc(db, 'users', storedUserId);  // Korrigera här
-                const docSnap = await getDoc(userRef);  // Korrigera här
+                const userRef = doc(db, 'users', storedUserId);
+                const docSnap = await getDoc(userRef);
 
                 if (docSnap.exists()) {
                     setStoredName(docSnap.data().username);
@@ -60,25 +59,21 @@ const UsernameScreen = () => {
 
     const handleSaveName = async () => {
         try {
-            // Kolla om ett userId redan finns i local storage
             let storedUserId = await AsyncStorage.getItem('userId');
     
             if (!storedUserId) {
-                // Generera ett nytt unikt ID om inget finns
                 storedUserId = uuid.v4().toString();
                 await AsyncStorage.setItem('userId', storedUserId);
                 console.log('Genererade nytt userId:', storedUserId);
             }
     
-            // Spara användaruppgifterna i Firestore under det genererade userId
-            const userRef = doc(db, 'users', storedUserId);  // Korrigera här
+            const userRef = doc(db, 'users', storedUserId);
             await setDoc(userRef, {
                 username,
                 notificationSetting,
                 chatNotificationSetting
             });
     
-            // Uppdatera UI
             setStoredName(username);
             console.log(`Sparade till Firestore: User ID: ${storedUserId}, Username: ${username}`);
         } catch (error) {
@@ -88,7 +83,6 @@ const UsernameScreen = () => {
 
     const handleResetApp = async () => {
         try {
-            // Hämta userId från Local Storage
             const storedUserId = await AsyncStorage.getItem('userId');
     
             if (!storedUserId) {
@@ -96,16 +90,13 @@ const UsernameScreen = () => {
                 return;
             }
     
-            // Ta bort användaren från Firestore
-            const userRef = doc(db, 'users', storedUserId);  // Korrigera här
-            await deleteDoc(userRef);  // Korrigera här
+            const userRef = doc(db, 'users', storedUserId);
+            await deleteDoc(userRef);
             console.log(`Användare ${storedUserId} raderad från Firestore.`);
     
-            // Rensa Local Storage
             await AsyncStorage.removeItem('userId');
             await AsyncStorage.clear();
     
-            // Uppdatera UI
             setStoredName(null);
             setUsername('');
             setUserId(null);
@@ -146,6 +137,7 @@ const UsernameScreen = () => {
     const handleBarCodeScanned = async ({ type, data }) => {
         setScanning(false);
         try {
+            console.log('Scanned Data:', data);
             const teamDoc = await getDoc(doc(db, "teams", data));
             if (teamDoc.exists()) {
                 if (!userId) {
@@ -164,12 +156,14 @@ const UsernameScreen = () => {
             }
         } catch (error) {
             console.error("Fel vid anslutning till team:", error);
+            alert("Något gick fel vid anslutning till teamet.");
         }
     };
-    
+
     useEffect(() => {
         (async () => {
             const { status } = await Camera.requestCameraPermissionsAsync();
+            console.log('Camera Permission Status:', status);
             if (status === 'granted') {
                 setHasPermission(true);
             } else {
