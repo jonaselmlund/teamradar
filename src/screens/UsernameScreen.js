@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity, Picker } from 'react-native';
 import tw from 'twrnc';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,7 @@ import { db } from '../firebaseConfig';
 import uuid from 'react-native-uuid';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Camera } from 'expo-camera';
+import * as Location from 'expo-location';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -20,6 +21,8 @@ const UsernameScreen = () => {
     const [hasPermission, setHasPermission] = useState(null);
     const [teamCodeInput, setTeamCodeInput] = useState('');
     const navigation = useNavigation();
+    const [updateFrequency, setUpdateFrequency] = useState(60000); // Default to 1 minute
+    const [isTracking, setIsTracking] = useState(true);
 
     useEffect(() => {
         const fetchUsernameFromFirestore = async () => {
@@ -92,7 +95,7 @@ const UsernameScreen = () => {
     
             const userRef = doc(db, 'users', storedUserId);
             await deleteDoc(userRef);
-            console.log(`Användare ${storedUserId} raderad från Firestore.`);
+            console.log(`Användare ${storedUserId raderad från Firestore.`);
     
             await AsyncStorage.removeItem('userId');
             await AsyncStorage.clear();
@@ -126,6 +129,7 @@ const UsernameScreen = () => {
                 alert("Gick med i teamet!");
                 setTeam(teamCodeInput);
                 setTeamName(teamDoc.data().name);
+                startTrackingPosition();
             } else {
                 alert("Team-koden är ogiltig!");
             }
@@ -152,12 +156,51 @@ const UsernameScreen = () => {
                 alert("Gick med i teamet!");
                 setTeam(data);
                 setTeamName(teamDoc.data().name);
+                startTrackingPosition();
             } else {
                 alert("Team-koden är ogiltig!");
             }
         } catch (error) {
             console.error("Fel vid anslutning till team:", error);
             alert("Något gick fel vid anslutning till teamet.");
+        }
+    };
+
+    const startTrackingPosition = async () => {
+        const updatePosition = async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission to access location was denied');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            const currentHour = new Date().getHours();
+
+            if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
+                console.log('Inactive hours, not updating position.');
+                return;
+            }
+
+            const userId = await AsyncStorage.getItem('userId');
+            if (userId) {
+                const userRef = doc(db, 'users', userId);
+                await updateDoc(userRef, {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude
+                });
+            }
+        };
+
+        setInterval(updatePosition, updateFrequency);
+    };
+
+    const toggleTracking = () => {
+        setIsTracking(!isTracking);
+        if (isTracking) {
+            clearInterval(startTrackingPosition);
+        } else {
+            startTrackingPosition();
         }
     };
 
@@ -190,13 +233,25 @@ const UsernameScreen = () => {
                 <>
                     <Text style={tw`text-xl mb-4`}>Välkommen, {storedName || "Gäst" }</Text>
                     {team ? (
-                        <Text style={tw`text-lg mb-4`}>Du är med i team: {teamName}</Text>
+                        <>
+                            <Text style={tw`text-lg mb-4`}>Du är med i team: {teamName}</Text>
+                            <Picker
+                                selectedValue={updateFrequency}
+                                style={tw`w-full max-w-md mb-4`}
+                                onValueChange={(itemValue) => setUpdateFrequency(itemValue)}
+                            >
+                                <Picker.Item label="10 sekunder" value={10000} />
+                                <Picker.Item label="1 minut" value={60000} />
+                                <Picker.Item label="3 minuter" value={180000} />
+                                <Picker.Item label="10 minuter" value={600000} />
+                            </Picker>
+                            <Button title={isTracking ? "Göm mig" : "Visa mig"} onPress={toggleTracking} />
+                        </>
                     ) : (
                         <>
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md mb-4`}
-                                //onPress={() => setScanning(true)
-                                onPress={() => Alert.alert("Funktionen är inte implementerad ännu.")}
+                                onPress={() => setScanning(true)}
                             >
                                 <Text style={tw`text-white text-center text-lg font-semibold`}>Gå med i team via QR-kod</Text>
                             </TouchableOpacity>

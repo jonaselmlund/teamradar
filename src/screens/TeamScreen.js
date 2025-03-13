@@ -5,6 +5,7 @@ import { db } from "../firebaseConfig"; // 🔥 Importera Firestore
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import QRCode from 'react-native-qrcode-svg'; // Assuming you have a QR code library installed
 import { useNavigation } from '@react-navigation/native';  // Import useNavigation hook
+import * as Location from 'expo-location';
 
 const TeamScreen = () => {
   const [teamName, setTeamName] = useState("");
@@ -129,6 +130,7 @@ const TeamScreen = () => {
 
         alert("Gick med i teamet!");
         fetchTeamData(teamCode);
+        startTrackingPosition();
       } else {
         alert("Team-koden är ogiltig!");
       }
@@ -202,6 +204,35 @@ const TeamScreen = () => {
     } catch (error) {
       console.error("Fel vid skapande av testanvändare:", error);
     }
+  };
+
+  const startTrackingPosition = async () => {
+    const updatePosition = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission to access location was denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const currentHour = new Date().getHours();
+
+      if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
+        console.log('Inactive hours, not updating position.');
+        return;
+      }
+
+      const userId = await AsyncStorage.getItem('userId');
+      if (userId) {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude
+        });
+      }
+    };
+
+    setInterval(updatePosition, 60000); // Default to 1 minute
   };
 
   if (team) {

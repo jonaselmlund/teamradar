@@ -1,19 +1,32 @@
 # teamradar
 
-#GIT
+# todo
+notifieringar
+samlingsplats
+info på kartskärm
+spara position löpande
+köp i skapa team
+tems and conditions vid skapa namn
+databasautenticering
+layout
+uppdateringsfrekvens
+
+
+
+# GIT
 git config --global user.name "jonaselmlund"
 git config --global user.email "jonas.elmlund@gmail.com"
 
-#hur man kör servern:
+# hur man kör servern:
 npx expo start 
 
-#Info om react native-appen.
+# I nfo om react native-appen.
 App.js är startsidan.
 
-#Tailwind
+# Tailwind
 npm install twrnc
 
-#asynchstorage för att spara saker lokalt på telefonen
+# asynchstorage för att spara saker lokalt på telefonen
 npm install @react-native-async-storage/async-storage
 
 # uid  för unikt user id till local storage som identifierare av användare.
@@ -52,3 +65,5 @@ please help me to: 1. remove the skapa team buttom when a team is already create
 add functionality: I hantera team: i listan på users i teamet ska det stå Is admin på kolumnen som man kan toggla. Om det bara är en medlem kan man inte ta bort admin. Man ska kunna ta bort hela teamet i teamlistan, då ska allt rensas och. Under Inactive hours ska en qr kod visas som används för att ansluta till teamet. Den ska visa 8 siffror och man kan också ange dessa siffror manuellt. Om man skriver rätt så ansluts man till det teamet. När man skapar teamet ska de 8 siffrorna för anslutning genereras.
 
 Lägg till en knapp "Gå med i "team via QR-kod" som öppnar kameran och låter dig scanna en kod som sen används för att gå med i ett team som har de 8 siffrorna som man skannar in. man går med i teamet som icke admin. Lägg också till en knapp: "Gå med i team med kod" som öppnar ett inputfält med 8 siffror och en acceptknapp som kontrollerar om man skrivit en kod till ett aktivt team och gå med i det som användare, (inte admin). Felhantering om inte teamet finns. Under Välkommen ska det vara en text som besrkiver vilket team man är med i och om man inte är med i något team ska knapparna jag beskrev synas.
+
+as soon as an not-expired team is joined, the user starts tracking position and update to firestore which can be seen by everyone in the team on the map. The update frequency is added to the usernamescreen with default value one minute but there is a dropdown where you can select from 10 seconds, 1 minute, 3 minutes, 10 minutes. When the team is between the inactive hours, no user position is stored or updated in the map. when the user is in an active team, user screen also has a button where the user can toggle update position on and off, then name of that toggle is "göm mig".
