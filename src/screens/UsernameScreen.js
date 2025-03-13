@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import tw from 'twrnc';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera';
 import * as Location from 'expo-location';
@@ -26,6 +26,12 @@ const UsernameScreen = () => {
     useEffect(() => {
         fetchUsernameFromFirestore(setStoredName, setTeam, setTeamName);
     }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchUsernameFromFirestore(setStoredName, setTeam, setTeamName);
+        }, [])
+    );
 
     const startTrackingPosition = async () => {
         const updatePosition = async () => {
@@ -110,6 +116,21 @@ const UsernameScreen = () => {
                             <Text style={tw`text-lg mb-4`}>Just nu är din position {isTracking ? "synlig" : "osynlig"}</Text>
 
                             <Button title={isTracking ? "Visa mig inte på kartan." : "jag vill vara synlig på kartan"} onPress={toggleTracking} />
+
+                            <View style={tw`flex-row justify-between items-center mb-4 w-full max-w-md`}>
+                                <Text style={tw`text-lg`}>Allmäna notifieringar på?</Text>
+                                <Switch
+                                    value={notificationSetting}
+                                    onValueChange={setNotificationSetting}
+                                />
+                            </View>
+                            <View style={tw`flex-row justify-between items-center mb-4 w-full max-w-md`}>
+                                <Text style={tw`text-lg`}>Notifieringar från chat på?</Text>
+                                <Switch
+                                    value={chatNotificationSetting}
+                                    onValueChange={setChatNotificationSetting}
+                                />
+                            </View>
                         </>
                     ) : (
                         <>

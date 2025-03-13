@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, FlatList, Switch, Alert } from "react-native";
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot, deleteDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig"; // 🔥 Importera Firestore
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import QRCode from 'react-native-qrcode-svg'; // Assuming you have a QR code library installed
@@ -159,6 +159,13 @@ const TeamScreen = () => {
         const teamRef = doc(db, "teams", user.teamId); // 🔥 Hämta ID från användaren istället
         await deleteDoc(teamRef);
 
+        // Delete all chat messages for the team
+        const messagesQuery = query(collection(db, 'messages'), where('teamId', '==', user.teamId));
+        const messagesSnapshot = await getDocs(messagesQuery);
+        messagesSnapshot.forEach(async (doc) => {
+            await deleteDoc(doc.ref);
+        });
+
         await updateDoc(doc(db, "users", user.userId), {
             teamId: null,
             isAdmin: false
@@ -259,6 +266,7 @@ const TeamScreen = () => {
         />
         <Button title="Radera Team" onPress={deleteTeam} />
         <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />
+          <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
         <Button title="Skapa Testanvändare" onPress={createTestUser} />
       </View>
     );

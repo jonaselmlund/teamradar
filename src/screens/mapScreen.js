@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Button, StyleSheet, Alert, Text } from 'react-native';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import { View, Button, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, getDoc, query, where } from 'firebase/firestore';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 
 const MapScreen = () => {
     const [users, setUsers] = useState([]);
     const [currentUserLocation, setCurrentUserLocation] = useState(null);
+    const [gatheringPoint, setGatheringPoint] = useState(null);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -55,12 +58,120 @@ const MapScreen = () => {
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude
                 });
+
+                // Fetch gathering point if exists
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists() && userDoc.data().teamId) {
+                    const teamRef = doc(db, 'teams', userDoc.data().teamId);
+                    const teamDoc = await getDoc(teamRef);
+                    if (teamDoc.exists() && teamDoc.data().gatheringPoint) {
+                        setGatheringPoint(teamDoc.data().gatheringPoint);
+                    }
+                }
             }
         })();
     }, []);
 
+    const handleLongPress = async (event) => {
+        const { latitude, longitude } = event.nativeEvent.coordinate;
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) return;
+
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists() && userDoc.data().teamId) {
+            const teamId = userDoc.data().teamId;
+            Alert.alert(
+                "Set Gathering Point",
+                "Do you want to set this location as the gathering point?",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Set",
+                        onPress: async () => {
+                            const teamRef = doc(db, 'teams', teamId);
+                            await updateDoc(teamRef, {
+                                gatheringPoint: { latitude, longitude }
+                            });
+                            setGatheringPoint({ latitude, longitude });
+                            Alert.alert("Gathering point set!");
+                        }
+                    }
+                ]
+            );
+        }
+    };
+
+    const handleGatheringPointPress = async () => {
+        Alert.alert(
+            "Gathering Point",
+            "What would you like to do?",
+            [
+                {
+                    text: "Remove",
+                    onPress: async () => {
+                        const userId = await AsyncStorage.getItem('userId');
+                        if (!userId) return;
+
+                        const userRef = doc(db, 'users', userId);
+                        const userDoc = await getDoc(userRef);
+                        if (userDoc.exists() && userDoc.data().teamId) {
+                            const teamId = userDoc.data().teamId;
+                            const teamRef = doc(db, 'teams', teamId);
+                            await updateDoc(teamRef, {
+                                gatheringPoint: null
+                            });
+                            setGatheringPoint(null);
+                            Alert.alert("Gathering point removed!");
+                        }
+                    }
+                },
+                {
+                    text: "Gather Now",
+                    onPress: async () => {
+                        const userId = await AsyncStorage.getItem('userId');
+                        if (!userId) return;
+
+                        const userRef = doc(db, 'users', userId);
+                        const userDoc = await getDoc(userRef);
+                        if (userDoc.exists() && userDoc.data().teamId) {
+                            const teamId = userDoc.data().teamId;
+
+                            // Fetch team members with notifications enabled
+                            const membersQuery = query(collection(db, 'users'), where('teamId', '==', teamId), where('notificationSetting', '==', true));
+                            const membersSnapshot = await getDocs(membersQuery);
+                            const members = membersSnapshot.docs.map(doc => doc.data());
+
+                            // Send notifications to team members
+                            members.forEach(member => {
+                                if (member.pushToken) {
+                                    Notifications.scheduleNotificationAsync({
+                                        content: {
+                                            title: "Dags att samlas",
+                                            body: "Se på kartan var vi ska träffas.",
+                                        },
+                                        trigger: null,
+                                    });
+                                }
+                            });
+
+                            Alert.alert("Gather now notification sent!");
+                        }
+                    }
+                },
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                }
+            ]
+        );
+    };
+
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371; // Radius of the Earth in km
+        const R = 6371000; // Radius of the Earth in meters
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = 
@@ -69,6 +180,28 @@ const MapScreen = () => {
             (1 - Math.cos(dLon))/2;
 
         return R * 2 * Math.asin(Math.sqrt(a));
+    };
+
+    const handleUserMarkerPress = (user) => {
+        if (currentUserLocation) {
+            const distance = calculateDistance(
+                currentUserLocation.latitude,
+                currentUserLocation.longitude,
+                user.latitude,
+                user.longitude
+            );
+            Alert.alert(
+                user.username,
+                `Distance: ${distance.toFixed(0)} meters`,
+                [{ text: "Close" }]
+            );
+        } else {
+            Alert.alert(
+                user.username,
+                "Distance: N/A",
+                [{ text: "Close" }]
+            );
+        }
     };
 
     return (
@@ -82,36 +215,31 @@ const MapScreen = () => {
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
+                onLongPress={handleLongPress}
             >
                 {users.map((user, index) => (
                     <Marker
                         key={index}
                         coordinate={{ latitude: user.latitude, longitude: user.longitude }}
                         title={user.username}
+                        onPress={() => handleUserMarkerPress(user)}
                     >
                         <View style={styles.marker}>
                             <Text style={styles.markerText}>{user.username.slice(0, 2)}</Text>
                         </View>
-                        <Callout onPress={() => {
-                            if (currentUserLocation) {
-                                const distance = calculateDistance(
-                                    currentUserLocation.latitude,
-                                    currentUserLocation.longitude,
-                                    user.latitude,
-                                    user.longitude
-                                );
-                                Alert.alert(
-                                    `User: ${user.username}`,
-                                    `Distance: ${distance.toFixed(2)} km`
-                                );
-                            } else {
-                                Alert.alert(`User: ${user.username}`);
-                            }
-                        }}>
-                            <Text>{user.username}</Text>
-                        </Callout>
                     </Marker>
                 ))}
+                {gatheringPoint && (
+                    <Marker
+                        coordinate={gatheringPoint}
+                        pinColor="red"
+                        onPress={handleGatheringPointPress}
+                    >
+                        <View style={styles.marker}>
+                            <Text style={styles.markerText}>GP</Text>
+                        </View>
+                    </Marker>
+                )}
             </MapView>
             <Button title="Back" onPress={() => navigation.goBack()} />
             <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
