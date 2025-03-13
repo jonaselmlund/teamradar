@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity, Picker } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import tw from 'twrnc';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../firebaseConfig';
-import uuid from 'react-native-uuid';
-import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Camera } from 'expo-camera';
 import * as Location from 'expo-location';
+import { Picker } from "@react-native-picker/picker";
+import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned } from '../utils/handleName';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -25,146 +24,8 @@ const UsernameScreen = () => {
     const [isTracking, setIsTracking] = useState(true);
 
     useEffect(() => {
-        const fetchUsernameFromFirestore = async () => {
-            try {
-                const storedUserId = await AsyncStorage.getItem('userId');
-                
-                if (!storedUserId) {
-                    console.log('Ingen userId hittad i local storage');
-                    return;
-                }
-
-                const userRef = doc(db, 'users', storedUserId);
-                const docSnap = await getDoc(userRef);
-
-                if (docSnap.exists()) {
-                    setStoredName(docSnap.data().username);
-                    const teamId = docSnap.data().teamId ? docSnap.data().teamId : null;
-                    setTeam(teamId);
-                    if (teamId) {
-                        const teamRef = doc(db, 'teams', teamId);
-                        const teamSnap = await getDoc(teamRef);
-                        if (teamSnap.exists()) {
-                            setTeamName(teamSnap.data().name);
-                        }
-                    }
-                    console.log('Hämtat namn från Firestore:', docSnap.data().username);
-                } else {
-                    console.log('Inget användarnamn hittat i Firestore');
-                }
-            } catch (error) {
-                console.error('Fel vid hämtning av användarnamn:', error);
-            }
-        };
-    
-        fetchUsernameFromFirestore();
+        fetchUsernameFromFirestore(setStoredName, setTeam, setTeamName);
     }, []);
-
-    const handleSaveName = async () => {
-        try {
-            let storedUserId = await AsyncStorage.getItem('userId');
-    
-            if (!storedUserId) {
-                storedUserId = uuid.v4().toString();
-                await AsyncStorage.setItem('userId', storedUserId);
-                console.log('Genererade nytt userId:', storedUserId);
-            }
-    
-            const userRef = doc(db, 'users', storedUserId);
-            await setDoc(userRef, {
-                username,
-                notificationSetting,
-                chatNotificationSetting
-            });
-    
-            setStoredName(username);
-            console.log(`Sparade till Firestore: User ID: ${storedUserId}, Username: ${username}`);
-        } catch (error) {
-            console.error('Fel vid sparande av namn:', error);
-        }
-    };
-
-    const handleResetApp = async () => {
-        try {
-            const storedUserId = await AsyncStorage.getItem('userId');
-    
-            if (!storedUserId) {
-                console.log('Ingen användare att radera.');
-                return;
-            }
-    
-            const userRef = doc(db, 'users', storedUserId);
-            await deleteDoc(userRef);
-            console.log(`Användare ${storedUserId raderad från Firestore.`);
-    
-            await AsyncStorage.removeItem('userId');
-            await AsyncStorage.clear();
-    
-            setStoredName(null);
-            setUsername('');
-            setUserId(null);
-            setTeam(null);
-            setTeamName('');
-    
-            console.log('Local Storage rensat.');
-        } catch (error) {
-            console.error('Fel vid reset av app:', error);
-        }
-    };
-
-    const handleJoinTeamWithCode = async () => {
-        if (!teamCodeInput.trim()) {
-            alert("Ange en team-kod!");
-            return;
-        }
-
-        try {
-            const teamDoc = await getDoc(doc(db, "teams", teamCodeInput));
-            if (teamDoc.exists()) {
-                await updateDoc(doc(db, "users", userId), {
-                    teamId: teamCodeInput,
-                    isAdmin: false
-                });
-
-                alert("Gick med i teamet!");
-                setTeam(teamCodeInput);
-                setTeamName(teamDoc.data().name);
-                startTrackingPosition();
-            } else {
-                alert("Team-koden är ogiltig!");
-            }
-        } catch (error) {
-            console.error("Fel vid anslutning till team:", error);
-        }
-    };
-
-    const handleBarCodeScanned = async ({ type, data }) => {
-        console.log(`PLACE !`);
-        setScanning(false);
-        try {
-            console.log(`Scanned barcode of type ${type} with data: ${data}`);
-            const teamDoc = await getDoc(doc(db, "teams", data));
-            if (teamDoc.exists()) {
-                if (!userId) {
-                    alert("Användar-ID saknas. Kan inte gå med i teamet.");
-                    return;
-                }
-                await updateDoc(doc(db, "users", userId), {
-                    teamId: data,
-                    isAdmin: false
-                });
-                alert("Gick med i teamet!");
-                setTeam(data);
-                setTeamName(teamDoc.data().name);
-                startTrackingPosition();
-            } else {
-                alert("Team-koden är ogiltig!");
-            }
-        } catch (error) {
-            console.error("Fel vid anslutning till team:", error);
-            alert("Något gick fel vid anslutning till teamet.");
-        }
-    };
 
     const startTrackingPosition = async () => {
         const updatePosition = async () => {
@@ -221,7 +82,7 @@ const UsernameScreen = () => {
         console.log('Scanning QR code...');
         return (
             <Camera
-                onBarCodeScanned={handleBarCodeScanned}
+                onBarCodeScanned={(data) => handleBarCodeScanned(data, userId, setTeam, setTeamName, startTrackingPosition)}
                 style={StyleSheet.absoluteFillObject}
             />
         );
@@ -235,17 +96,20 @@ const UsernameScreen = () => {
                     {team ? (
                         <>
                             <Text style={tw`text-lg mb-4`}>Du är med i team: {teamName}</Text>
+                            <Text style={tw`text-lg mb-4`}>Hur ofta vill du att din position ska uppdateras?</Text>
                             <Picker
                                 selectedValue={updateFrequency}
                                 style={tw`w-full max-w-md mb-4`}
                                 onValueChange={(itemValue) => setUpdateFrequency(itemValue)}
                             >
-                                <Picker.Item label="10 sekunder" value={10000} />
-                                <Picker.Item label="1 minut" value={60000} />
-                                <Picker.Item label="3 minuter" value={180000} />
-                                <Picker.Item label="10 minuter" value={600000} />
+                                <Picker.Item label="var 10:e sekund, bästa prestanda" value={10000} />
+                                <Picker.Item label="varje minut" value={60000} />
+                                <Picker.Item label="Var 3:e minut" value={180000} />
+                                <Picker.Item label="var 10:e minut, sparar batteri" value={600000} />
                             </Picker>
-                            <Button title={isTracking ? "Göm mig" : "Visa mig"} onPress={toggleTracking} />
+                            <Text style={tw`text-lg mb-4`}>Just nu är din position {isTracking ? "synlig" : "osynlig"}</Text>
+
+                            <Button title={isTracking ? "Visa mig inte på kartan." : "jag vill vara synlig på kartan"} onPress={toggleTracking} />
                         </>
                     ) : (
                         <>
@@ -264,7 +128,7 @@ const UsernameScreen = () => {
                             />
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md`}
-                                onPress={handleJoinTeamWithCode}
+                                onPress={() => handleJoinTeamWithCode(teamCodeInput, userId, setTeam, setTeamName, startTrackingPosition)}
                             >
                                 <Text style={tw`text-white text-center text-lg font-semibold`}>Gå med i team med kod</Text>
                             </TouchableOpacity>
@@ -296,7 +160,7 @@ const UsernameScreen = () => {
                     </View>
                     <TouchableOpacity
                         style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md`}
-                        onPress={handleSaveName}
+                        onPress={() => handleSaveName(username, notificationSetting, chatNotificationSetting, setStoredName)}
                     >
                         <Text style={tw`text-white text-center text-lg font-semibold`}>Spara Namn</Text>
                     </TouchableOpacity>
@@ -309,7 +173,7 @@ const UsernameScreen = () => {
             
             <TouchableOpacity
                 style={tw`bg-red-500 p-4 rounded-lg shadow-md w-full max-w-md mt-4`}
-                onPress={handleResetApp}
+                onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, setTeamName)}
             >
                 <Text style={tw`text-white text-center text-lg font-semibold`}>Reset App, ta bort användare och börja om.</Text>
             </TouchableOpacity>
