@@ -3,6 +3,8 @@ import { View, Text, TextInput, Button, FlatList, Switch, Alert } from "react-na
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, startTrackingPosition } from '../utils/teamUtils';
+import { onSnapshot, doc } from "firebase/firestore"; // Ensure onSnapshot is imported
+import { db } from "../firebaseConfig"; // Ensure db is imported
 
 const TeamScreen = () => {
   const [teamName, setTeamName] = useState("");
@@ -23,7 +25,7 @@ const TeamScreen = () => {
       const unsubscribe = onSnapshot(doc(db, "users", user.userId), (doc) => {
         const userData = doc.data();
         if (userData.teamId) {
-          fetchTeamData(userData.teamId, setTeam, fetchMembers);
+          fetchTeamData(userData.teamId, setTeam, (teamId) => fetchMembers(teamId, setMembers));
         }
       });
       return () => unsubscribe();
@@ -36,8 +38,9 @@ const TeamScreen = () => {
         <Text style={{ fontSize: 20, marginBottom: 10 }}>Team: {team.name}</Text>
         <Text>Timmar på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
         <Text>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
-        <QRCode style={{ alignSelf: 'center' }} value={team.teamCode} size={150} />
-        <Text>Teamkod, kan användas istället för QR-kod: {team.teamCode}</Text>
+        <QRCode style={{ alignItem: 'center' }} value={team.teamCode} size={180} />
+        <Text>Teamkod, kan användas istället för QR-kod:</Text>
+        <Text style={{ fontSize: 40, fontWeight: 'bold' }}>{team.teamCode}</Text>
         <Text>Medlemmar i teamet (ändra administratör-status med spaken till höger):</Text>
         <FlatList
           data={members}
