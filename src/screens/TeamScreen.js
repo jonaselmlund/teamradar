@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, FlatList, Switch, Alert } from "react-native";
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot, deleteDoc, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig"; // 🔥 Importera Firestore
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import QRCode from 'react-native-qrcode-svg'; // Assuming you have a QR code library installed
-import { useNavigation } from '@react-navigation/native';  // Import useNavigation hook
-import * as Location from 'expo-location';
+import { useNavigation } from '@react-navigation/native';
+import QRCode from 'react-native-qrcode-svg';
+import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, startTrackingPosition } from '../utils/teamUtils';
 
 const TeamScreen = () => {
   const [teamName, setTeamName] = useState("");
@@ -18,26 +15,7 @@ const TeamScreen = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        if (!userId) {
-          console.log('Ingen användare hittades i Local Storage.');
-          return;
-        }
-        const userDocRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser({ userId, ...userDoc.data() });
-          console.log('Användardata hämtad:', userDoc.data());
-        } else {
-          console.log('Användaren finns inte i Firestore.');
-        }
-      } catch (error) {
-        console.error('Fel vid hämtning av användardata:', error);
-      }
-    };
-    fetchUserData();
+    fetchUserData(setUser);
   }, []);
 
   useEffect(() => {
@@ -45,229 +23,40 @@ const TeamScreen = () => {
       const unsubscribe = onSnapshot(doc(db, "users", user.userId), (doc) => {
         const userData = doc.data();
         if (userData.teamId) {
-          fetchTeamData(userData.teamId);
+          fetchTeamData(userData.teamId, setTeam, fetchMembers);
         }
       });
       return () => unsubscribe();
     }
   }, [user]);
 
-  const fetchTeamData = async (teamId) => {
-    const teamDoc = await getDoc(doc(db, "teams", teamId));
-    if (teamDoc.exists()) {
-        setTeam({ id: teamDoc.id, ...teamDoc.data() }); // 🔥 Lägg till ID!
-        fetchMembers(teamId);
-        console.log("Teamdata hämtad:", teamDoc.data());
-    }
-  };
-
-  const fetchMembers = (teamId) => {
-    const unsubscribe = onSnapshot(collection(db, "teams", teamId, "members"), (snapshot) => {
-      const membersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMembers(membersList);
-    });
-    return () => unsubscribe();
-  };
-
-  const createTeam = async () => {
-    if (!teamName.trim()) {
-      alert("Ange ett team-namn!");
-      return;
-    }
-
-    const generateTeamCode = () => {
-      return Math.floor(10000000 + Math.random() * 90000000).toString();
-    };
-
-    try {
-      const teamCode = generateTeamCode();
-      const teamRef = await addDoc(collection(db, "teams"), {
-        name: teamName,
-        createdAt: serverTimestamp(),
-        expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +7 dagar
-        maxMembers: 12,
-        inactiveHours: { start: inactiveHoursStart, end: inactiveHoursEnd },
-        teamCode: teamCode
-      });
-
-      await updateDoc(doc(db, "users", user.userId), {
-        teamId: teamRef.id,
-        isAdmin: true
-      });
-
-      await addDoc(collection(db, "teams", teamRef.id, "members"), {
-        userId: user.userId,
-        username: user.username,
-        isAdmin: true
-      });
-
-      alert("Team skapat!");
-      setTeamName(""); // Töm inputfältet
-    } catch (error) {
-      console.error("Fel vid skapande av team:", error);
-    }
-  };
-
-  const joinTeam = async () => {
-    if (!teamCode.trim()) {
-      alert("Ange en team-kod!");
-      return;
-    }
-
-    try {
-      const teamDoc = await getDoc(doc(db, "teams", teamCode));
-      if (teamDoc.exists()) {
-        await updateDoc(doc(db, "users", user.userId), {
-          teamId: teamCode,
-          isAdmin: false
-        });
-
-        await addDoc(collection(db, "teams", teamCode, "members"), {
-          userId: user.userId,
-          username: user.username,
-          isAdmin: false
-        });
-
-        alert("Gick med i teamet!");
-        fetchTeamData(teamCode);
-        startTrackingPosition();
-      } else {
-        alert("Team-koden är ogiltig!");
-      }
-    } catch (error) {
-      console.error("Fel vid anslutning till team:", error);
-    }
-  };
-
-  const toggleAdminStatus = async (memberId, isAdmin) => {
-    if (members.length === 1) {
-      alert("Det måste finnas minst en admin.");
-      return;
-    }
-    await updateDoc(doc(db, "teams", team.id, "members", memberId), {
-      isAdmin: !isAdmin
-    });
-  };
-
-  const deleteTeam = async () => {
-    try {
-        if (!team || !user) {
-            alert("Ingen giltig team eller användare.");
-            return;
-        }
-
-        const teamRef = doc(db, "teams", user.teamId); // 🔥 Hämta ID från användaren istället
-        await deleteDoc(teamRef);
-
-        // Delete all chat messages for the team
-        const messagesQuery = query(collection(db, 'messages'), where('teamId', '==', user.teamId));
-        const messagesSnapshot = await getDocs(messagesQuery);
-        messagesSnapshot.forEach(async (doc) => {
-            await deleteDoc(doc.ref);
-        });
-
-        await updateDoc(doc(db, "users", user.userId), {
-            teamId: null,
-            isAdmin: false
-        });
-
-        setTeam(null);
-        setMembers([]);
-        alert("Teamet har raderats.");
-    } catch (error) {
-        console.error("Fel vid radering av team:", error);
-    }
-  };
-
-  const createTestUser = async () => {
-    const generateRandomUsername = () => {
-      const letters = 'abcdefghijklmnopqrstuvwxyz';
-      let username = '';
-      for (let i = 0; i < 4; i++) {
-        username += letters[Math.floor(Math.random() * letters.length)];
-      }
-      return username + '-test-user';
-    };
-
-    const testUser = {
-      username: generateRandomUsername(),
-      notificationSetting: true,
-      chatNotificationSetting: true,
-      latitude: 59.6498,
-      longitude: 17.9238,
-      teamId: team.id,
-      isAdmin: false
-    };
-
-    try {
-      const testUserRef = await addDoc(collection(db, "users"), testUser);
-      await addDoc(collection(db, "teams", team.id, "members"), {
-        userId: testUserRef.id,
-        username: testUser.username,
-        isAdmin: false
-      });
-
-      alert("Testanvändare skapad och tillagd i teamet!");
-    } catch (error) {
-      console.error("Fel vid skapande av testanvändare:", error);
-    }
-  };
-
-  const startTrackingPosition = async () => {
-    const updatePosition = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const currentHour = new Date().getHours();
-
-      if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
-        console.log('Inactive hours, not updating position.');
-        return;
-      }
-
-      const userId = await AsyncStorage.getItem('userId');
-      if (userId) {
-        const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude
-        });
-      }
-    };
-
-    setInterval(updatePosition, 60000); // Default to 1 minute
-  };
-
   if (team) {
     return (
       <View style={{ padding: 20 }}>
         <Text style={{ fontSize: 20, marginBottom: 10 }}>Team: {team.name}</Text>
-        <Text>Timmar på dygnet när kartan är låst: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
+        <Text>Timmar på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
         <Text>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
-        <QRCode value={team.teamCode} size={150} />
+        <QRCode style={{ alignSelf: 'center' }} value={team.teamCode} size={150} />
         <Text>Teamkod, kan användas istället för QR-kod: {team.teamCode}</Text>
-        <Text>Medlemmar i teamet:</Text>
+        <Text>Medlemmar i teamet (ändra administratör-status med spaken till höger):</Text>
         <FlatList
           data={members}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
-              <Text>{item.username} {item.isAdmin ? "(Is admin)" : ""}</Text>
+              <Text>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
               <Switch
                 value={item.isAdmin}
-                onValueChange={() => toggleAdminStatus(item.id, item.isAdmin)}
+                onValueChange={() => toggleAdminStatus(team.id, item.id, item.isAdmin, members)}
               />
             </View>
           )}
         />
-        <Button title="Radera Team" onPress={deleteTeam} />
+        <Button title="Radera Team" onPress={() => deleteTeam(team, user, setTeam, setMembers)} />
         <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />
-          <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
-        <Button title="Skapa Testanvändare" onPress={createTestUser} />
+        <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
+        <Button title="Back" onPress={() => navigation.goBack()} />
+        <Button title="Skapa Testanvändare" onPress={() => createTestUser(team.id, setMembers)} />
       </View>
     );
   }
@@ -287,6 +76,8 @@ const TeamScreen = () => {
           borderRadius: 5
         }}
       />
+      <Text>Sätt nattläge, de timmar på dygnet när kartan inte uppdateras.</Text>
+      <Text>Från:</Text>
       <TextInput
         placeholder="Inactive Hours Start"
         value={inactiveHoursStart.toString()}
@@ -300,6 +91,7 @@ const TeamScreen = () => {
           borderRadius: 5
         }}
       />
+      <Text>Till:</Text>
       <TextInput
         placeholder="Inactive Hours End"
         value={inactiveHoursEnd.toString()}
@@ -312,22 +104,14 @@ const TeamScreen = () => {
           marginBottom: 10,
           borderRadius: 5
         }}
+        
       />
-      <Button title="Skapa Team" onPress={createTeam} />
-      <Text style={{ fontSize: 20, marginTop: 20, marginBottom: 10 }}>Gå med i team</Text>
-      <TextInput
-        placeholder="Team-kod"
-        value={teamCode}
-        onChangeText={setTeamCode}
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          padding: 10,
-          marginBottom: 10,
-          borderRadius: 5
-        }}
-      />
-      <Button title="Gå med i Team" onPress={joinTeam} />
+      <Text>(Sätt samma tid i från och till om du vill skippa nattläge.)</Text>
+      <Button title="Skapa Team" onPress={() => createTeam(teamName, inactiveHoursStart, inactiveHoursEnd, user, setTeamName, setTeam)} />
+      <Text style={{ fontSize: 20, marginTop: 20, marginBottom: 10 }}>Vill du istället gå med i ett befintligt team?</Text>
+      <Text>(Du behöver en teamkod eller en QR-kod du kan scanna)</Text>
+      
+      <Button title="Gå tillbaka för att gå med i team." onPress={() => navigation.goBack()} /> 
     </View>
   );
 };

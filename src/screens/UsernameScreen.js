@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import tw from 'twrnc';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,8 @@ import { Camera } from 'expo-camera';
 import * as Location from 'expo-location';
 import { Picker } from "@react-native-picker/picker";
 import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned } from '../utils/handleName';
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -19,9 +21,11 @@ const UsernameScreen = () => {
     const [scanning, setScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState(null);
     const [teamCodeInput, setTeamCodeInput] = useState('');
-    const navigation = useNavigation();
     const [updateFrequency, setUpdateFrequency] = useState(60000); // Default to 1 minute
     const [isTracking, setIsTracking] = useState(true);
+    const [termsVisible, setTermsVisible] = useState(false);
+    const [termsText, setTermsText] = useState('');
+    const navigation = useNavigation();
 
     useEffect(() => {
         fetchUsernameFromFirestore(setStoredName, setTeam, setTeamName);
@@ -84,6 +88,22 @@ const UsernameScreen = () => {
         })();
     }, []);
 
+    const loadTerms = async () => {
+        try {
+            const response = await fetch('https://frontix.se/teamradar/terms.txt');
+            const terms = await response.text();
+            console.log(terms); console.log(terms);
+            setTermsText(terms);
+        } catch (error) {
+            console.error('Error loading terms:', error);
+        }
+    };
+
+    const showTerms = async () => {
+        await loadTerms();
+        setTermsVisible(true);
+    };
+
     if (scanning) {
         console.log('Scanning QR code...');
         return (
@@ -134,6 +154,9 @@ const UsernameScreen = () => {
                         </>
                     ) : (
                         <>
+                            <Text style={tw`text-xl mb-4`}>Du är inte med i något team än.</Text>
+                                <Text>(Du går med i ett team genom att scanna en QR-kod eller skriva in en kod som du kan få av en som redan är med i teamet du vill gå med i.)</Text>
+                                  
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-4 rounded-lg shadow-md w-full max-w-md mb-4`}
                                 onPress={() => setScanning(true)}
@@ -165,6 +188,10 @@ const UsernameScreen = () => {
                         value={username}
                         onChangeText={setUsername}
                     />
+                    <Text style={tw`text-xl mb-4`}>Genom att skapa en användare samtycker du till våra regler och villkor.</Text>
+                    <TouchableOpacity onPress={showTerms}>
+                        <Text style={tw`text-blue-500 underline`}>Läs våra regler och villkor</Text>
+                    </TouchableOpacity>
                     <View style={tw`flex-row justify-between items-center mb-4 w-full max-w-md`}>
                         <Text style={tw`text-lg`}>Allmäna notifieringar på?</Text>
                         <Switch
@@ -187,17 +214,39 @@ const UsernameScreen = () => {
                     </TouchableOpacity>
                 </>
             )}
-            
-            <Button title="Hantera eller skapa team" onPress={() => navigation.navigate("TeamScreen")} />
-
-            <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} /> 
-            
+            {team ? (
+    <View>
+        <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />
+        <Button title="Hantera teamet" onPress={() => navigation.navigate("TeamScreen")} />
+    </View>     
+) : (
+    <View>
+    <Text style={tw`text-xl mb-4`}>Gå med i ett team för att kunna se kartan. Du kan också skapa ett team om du inte har något att gå med i.</Text>
+    <Button title="Skapa team" onPress={() => navigation.navigate("TeamScreen")} />
+           </View>
+)}
+             {team && (
+                 <Button title="Visa Karta" onPress={() => navigation.navigate("MapScreen")} />        
+        )}
             <TouchableOpacity
                 style={tw`bg-red-500 p-4 rounded-lg shadow-md w-full max-w-md mt-4`}
                 onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, setTeamName)}
             >
                 <Text style={tw`text-white text-center text-lg font-semibold`}>Reset App, ta bort användare och börja om.</Text>
             </TouchableOpacity>
+
+            <Modal
+                visible={termsVisible}
+                animationType="slide"
+                onRequestClose={() => setTermsVisible(false)}
+            >
+                <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
+                    <ScrollView style={tw`w-full max-w-md`}>
+                        <Text style={tw`text-lg`}>{termsText}</Text>
+                    </ScrollView>
+                    <Button title="Stäng" onPress={() => setTermsVisible(false)} />
+                </View>
+            </Modal>
         </View>
     );
 };

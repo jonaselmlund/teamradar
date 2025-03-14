@@ -82,15 +82,15 @@ const MapScreen = () => {
         if (userDoc.exists() && userDoc.data().teamId) {
             const teamId = userDoc.data().teamId;
             Alert.alert(
-                "Set Gathering Point",
-                "Do you want to set this location as the gathering point?",
+                "Ange samlingsplats",
+                "Vill du använda denna plats som samlingsplats?",
                 [
                     {
-                        text: "Cancel",
+                        text: "Avbryt",
                         style: "cancel"
                     },
                     {
-                        text: "Set",
+                        text: "Ja",
                         onPress: async () => {
                             const teamRef = doc(db, 'teams', teamId);
                             await updateDoc(teamRef, {
@@ -107,11 +107,11 @@ const MapScreen = () => {
 
     const handleGatheringPointPress = async () => {
         Alert.alert(
-            "Gathering Point",
-            "What would you like to do?",
+            "Samlingsplats",
+            "Vad vill du göra?",
             [
                 {
-                    text: "Remove",
+                    text: "Ta bort",
                     onPress: async () => {
                         const userId = await AsyncStorage.getItem('userId');
                         if (!userId) return;
@@ -125,12 +125,12 @@ const MapScreen = () => {
                                 gatheringPoint: null
                             });
                             setGatheringPoint(null);
-                            Alert.alert("Gathering point removed!");
+                            Alert.alert("Samlingsplats borttagen!");
                         }
                     }
                 },
                 {
-                    text: "Gather Now",
+                    text: "Samlas nu!",
                     onPress: async () => {
                         const userId = await AsyncStorage.getItem('userId');
                         if (!userId) return;
@@ -158,12 +158,12 @@ const MapScreen = () => {
                                 }
                             });
 
-                            Alert.alert("Gather now notification sent!");
+                            Alert.alert("Samlingsmeddelande utskickat!");
                         }
                     }
                 },
                 {
-                    text: "Cancel",
+                    text: "Avbryt",
                     style: "cancel"
                 }
             ]

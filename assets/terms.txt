@@ -1,0 +1,23 @@
+Följande regler och villkor gäller för användning av appen teamradar.
+
+1. Samtycke till platsdata:
+Samtycke till användning av platsinformation: "Genom att använda denna app samtycker du till att vi får samla in och använda din geografiska plats, inklusive din aktuella plats, för att tillhandahålla appens funktioner som positionering, karttjänster och andra relaterade funktioner.
+2. Ingen garanti för funktionalitet:
+Inget ansvar för funktionalitet: "Vi garanterar inte att appens funktioner, inklusive platsbaserade funktioner, alltid kommer att fungera felfritt. Fel kan uppstå på grund av externa faktorer som GPS-signalproblem eller internetanslutning.
+3. GDPR och Dataskydd:
+Behandling av personuppgifter enligt GDPR: "Vi samlar in, behandlar och lagrar dina personuppgifter, inklusive platsinformation, för att kunna tillhandahålla våra tjänster. Vi följer de principer som fastställs i den allmänna dataskyddsförordningen (GDPR).
+Syfte med datainsamling: "De personuppgifter som samlas in används för att förbättra användarupplevelsen, tillhandahålla platsbaserade tjänster, och kommunicera med användaren vid behov. Ingen personlig data kommer att säljas till tredje part.
+Lagring och åtkomst: "Dina uppgifter lagras på våra servrar och kommer endast att vara åtkomliga för vårt team, samt eventuella betrodda tredjepartsleverantörer som hjälper oss att tillhandahålla tjänsten. Vi kommer inte att behålla dina uppgifter längre än nödvändigt.
+Rättigheter under GDPR: "Du har rätt att begära åtkomst till, korrigera, radera eller begränsa behandlingen av dina personuppgifter. Du har också rätt att invända mot viss behandling av dina uppgifter och rätt att överföra dem till en annan tjänst.
+4. Tredjepartsintegrering och delning av data:
+Tredjeparts tjänster och delning av data: "Appen kan integrera tredjeparts API:er och tjänster, såsom karttjänster (Google Maps, etc.), som kan samla in eller använda dina data i enlighet med deras egna sekretesspolicyer. Vi rekommenderar att du granskar dessa sekretesspolicyer.
+5. Användning av Push-notiser och annan kommunikation:
+Push-notiser och meddelanden: "Genom att använda denna app samtycker du till att ta emot push-notiser som kan inkludera platsbaserade meddelanden eller påminnelser. Du kan välja att stänga av dessa notiser i inställningarna.
+6. Åldersbegränsning:
+Åldersgräns: "Denna app är endast avsedd för användning av personer över 16 år (eller den åldersgräns som gäller i ditt land). Genom att använda appen bekräftar du att du är över denna åldersgräns eller har fått tillstånd från en vårdnadshavare.
+7. Ansvarsbegränsning:
+Ansvarsbegränsning: "Vi ansvarar inte för skador eller förluster som kan uppstå till följd av felaktig eller fördröjd platsinformation. Du använder appen på egen risk, och vi tar inget ansvar för eventuella problem som kan uppstå till följd av användning av appen.
+8. Ändringar i villkoren:
+Ändringar i villkoren: "Vi förbehåller oss rätten att ändra dessa villkor när som helst. Vid större ändringar kommer vi att informera användarna om ändringarna via e-post eller i appen.
+
+Genom att använda denna app samtycker du till dessa användarvillkor och vår sekretesspolicy. Om du inte godkänner dessa villkor, vänligen avinstallera appen och sluta använda våra tjänster.
