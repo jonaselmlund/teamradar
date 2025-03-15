@@ -59,7 +59,7 @@ const TeamScreen = () => {
         <Text>Medlemmar i teamet, tryck på ett namn för att visa kartan. (Ändra administratör-status med spaken till höger):</Text>
         <FlatList
           data={members}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.userId} // Ensure the correct user ID is used
           renderItem={({ item }) => (
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
               <TouchableOpacity onPress={() => handleMemberPress(item)}>
@@ -67,10 +67,10 @@ const TeamScreen = () => {
               </TouchableOpacity>
               <Switch
                 value={item.isAdmin}
-                onValueChange={() => toggleAdminStatus(team.id, item.id, item.isAdmin, members)}
+                onValueChange={() => toggleAdminStatus(team.id, item.userId, item.isAdmin, members)}
               />
-              {user.isAdmin && user.userId !== item.id && (
-                <Button title="ta bort" onPress={() => handleRemoveUser(item.id)} />
+              {user.isAdmin && user.userId !== item.userId && (
+                <Button title="ta bort" onPress={() => handleRemoveUser(item.userId)} />
               )}
             </View>
           )}

@@ -265,7 +265,7 @@ export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeam
 export const removeUserFromTeam = async (teamId, userId) => {
     try {
         const userRef = doc(db, 'users', userId);
-        console.log('Removing user from team:', userId);
+        console.log('Removing user from team. userid=', userId);
         console.log('User ref:', userRef);
         console.log('Team ID:', teamId);
         
