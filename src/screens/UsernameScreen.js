@@ -3,12 +3,11 @@ import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpac
 import tw from 'twrnc';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Camera } from 'expo-camera';
+import { Camera } from 'expo-camera'; 
 import * as Location from 'expo-location';
 import { Picker } from "@react-native-picker/picker";
 import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned } from '../utils/handleName';
 import * as FileSystem from 'expo-file-system';
-import { Asset } from 'expo-asset';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -66,12 +65,14 @@ const UsernameScreen = () => {
         setInterval(updatePosition, updateFrequency);
     };
 
-    const toggleTracking = () => {
-        setIsTracking(!isTracking);
-        if (isTracking) {
-            clearInterval(startTrackingPosition);
-        } else {
+    const toggleTracking = async () => {
+        const newTrackingState = !isTracking;
+        setIsTracking(newTrackingState);
+        await AsyncStorage.setItem('isTracking', JSON.stringify(newTrackingState));
+        if (newTrackingState) {
             startTrackingPosition();
+        } else {
+            clearInterval(startTrackingPosition);
         }
     };
 
@@ -92,7 +93,7 @@ const UsernameScreen = () => {
         try {
             const response = await fetch('https://frontix.se/teamradar/terms.txt');
             const terms = await response.text();
-            console.log(terms); console.log(terms);
+            console.log(terms);
             setTermsText(terms);
         } catch (error) {
             console.error('Error loading terms:', error);
@@ -105,7 +106,6 @@ const UsernameScreen = () => {
     };
 
     if (scanning) {
-        console.log('Scanning QR code...');
         return (
             <Camera
                 onBarCodeScanned={(data) => handleBarCodeScanned(data, userId, setTeam, setTeamName, startTrackingPosition)}

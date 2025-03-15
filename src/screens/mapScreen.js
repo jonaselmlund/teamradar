@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, Button, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, updateDoc, doc, getDoc, query, where } from 'firebase/firestore';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { fetchMembers } from '../utils/teamUtils';
 
 const MapScreen = () => {
     const [users, setUsers] = useState([]);
     const [currentUserLocation, setCurrentUserLocation] = useState(null);
     const [gatheringPoint, setGatheringPoint] = useState(null);
+    const [members, setMembers] = useState([]);
     const navigation = useNavigation();
+    const route = useRoute();
+    const { member } = route.params || {};
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -71,6 +75,18 @@ const MapScreen = () => {
             }
         })();
     }, []);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const teamId = member?.teamId;
+            if (teamId) {
+                const membersData = await fetchMembers(teamId);
+                const filteredMembers = membersData.filter(m => m.isTracking !== false);
+                setMembers(filteredMembers);
+            }
+        };
+        fetchData();
+    }, [member]);
 
     const handleLongPress = async (event) => {
         const { latitude, longitude } = event.nativeEvent.coordinate;
@@ -240,6 +256,13 @@ const MapScreen = () => {
                         </View>
                     </Marker>
                 )}
+                {members.map((member) => (
+                    <Marker
+                        key={member.id}
+                        coordinate={{ latitude: member.latitude, longitude: member.longitude }}
+                        title={member.username}
+                    />
+                ))}
             </MapView>
             <Button title="Back" onPress={() => navigation.goBack()} />
             <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />

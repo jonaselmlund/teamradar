@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, FlatList, Switch, Alert } from "react-native";
+import { View, Text, TextInput, Button, FlatList, Switch, Alert, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, startTrackingPosition } from '../utils/teamUtils';
@@ -32,22 +32,28 @@ const TeamScreen = () => {
     }
   }, [user]);
 
+  const handleMemberPress = (member) => {
+    navigation.navigate("MapScreen", { member });
+  };
+
   if (team) {
     return (
-      <View style={{ padding: 20 }}>
+      <ScrollView style={{ padding: 20 }}>
         <Text style={{ fontSize: 20, marginBottom: 10 }}>Team: {team.name}</Text>
         <Text>Timmar på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
         <Text>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
         <QRCode style={{ alignItem: 'center' }} value={team.teamCode} size={180} />
         <Text>Teamkod, kan användas istället för QR-kod:</Text>
         <Text style={{ fontSize: 40, fontWeight: 'bold' }}>{team.teamCode}</Text>
-        <Text>Medlemmar i teamet (ändra administratör-status med spaken till höger):</Text>
+        <Text>Medlemmar i teamet, tryck på ett namn för att visa kartan. (Ändra administratör-status med spaken till höger):</Text>
         <FlatList
           data={members}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
-              <Text>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
+              <TouchableOpacity onPress={() => handleMemberPress(item)}>
+                <Text>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
+              </TouchableOpacity>
               <Switch
                 value={item.isAdmin}
                 onValueChange={() => toggleAdminStatus(team.id, item.id, item.isAdmin, members)}
@@ -60,7 +66,7 @@ const TeamScreen = () => {
         <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
         <Button title="Back" onPress={() => navigation.goBack()} />
         <Button title="Skapa Testanvändare" onPress={() => createTestUser(team.id, setMembers)} />
-      </View>
+      </ScrollView>
     );
   }
 

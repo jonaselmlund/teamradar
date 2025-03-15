@@ -171,12 +171,25 @@ export const createTestUser = async (teamId, setMembers) => {
         return username + '-test-user';
     };
 
+    const generateRandomCoordinates = () => {
+        const latBase = 59.6498;
+        const lonBase = 17.9238;
+      
+        const latRandom = (Math.random() * 0.0001).toFixed(4); // Generates a random value between 0.0000 and 0.0001
+        const lonRandom = (Math.random() * 0.0001).toFixed(4);
+      
+        const latitude = parseFloat((latBase + Number(latRandom)).toFixed(8));
+        const longitude = parseFloat((lonBase + Number(lonRandom)).toFixed(8));
+      
+        return { latitude, longitude };
+      };
+
     const testUser = {
         username: generateRandomUsername(),
         notificationSetting: true,
         chatNotificationSetting: true,
-        latitude: 59.6498,
-        longitude: 17.9238,
+        latitude: generateRandomCoordinates().latitude,
+        longitude: generateRandomCoordinates().longitude,
         teamId: teamId,
         isAdmin: false
     };
