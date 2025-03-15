@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, FlatList, Switch, Alert, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Button, FlatList, Switch, Alert, TouchableOpacity } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
-import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, startTrackingPosition } from '../utils/teamUtils';
-import { onSnapshot, doc } from "firebase/firestore"; // Ensure onSnapshot is imported
-import { db } from "../firebaseConfig"; // Ensure db is imported
+import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, removeUserFromTeam } from '../utils/teamUtils';
+import { onSnapshot, doc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 const TeamScreen = () => {
   const [teamName, setTeamName] = useState("");
@@ -36,9 +36,20 @@ const TeamScreen = () => {
     navigation.navigate("MapScreen", { member });
   };
 
+  const handleRemoveUser = async (memberId) => {
+    try {
+      await removeUserFromTeam(team.id, memberId);
+      Alert.alert("Success", "User removed from the team.");
+      console.log(`User ${memberId} removed from team ${team.id}`);
+      fetchMembers(team.id, setMembers); // Refresh the members list
+    } catch (error) {
+      console.error("Error removing user from team:", error);
+    }
+  };
+
   if (team) {
     return (
-      <ScrollView style={{ padding: 20 }}>
+      <View style={{ padding: 20, flex: 1 }}>
         <Text style={{ fontSize: 20, marginBottom: 10 }}>Team: {team.name}</Text>
         <Text>Timmar på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
         <Text>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
@@ -58,6 +69,9 @@ const TeamScreen = () => {
                 value={item.isAdmin}
                 onValueChange={() => toggleAdminStatus(team.id, item.id, item.isAdmin, members)}
               />
+              {user.isAdmin && user.userId !== item.id && (
+                <Button title="ta bort" onPress={() => handleRemoveUser(item.id)} />
+              )}
             </View>
           )}
         />
@@ -66,7 +80,7 @@ const TeamScreen = () => {
         <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
         <Button title="Back" onPress={() => navigation.goBack()} />
         <Button title="Skapa Testanvändare" onPress={() => createTestUser(team.id, setMembers)} />
-      </ScrollView>
+      </View>
     );
   }
 

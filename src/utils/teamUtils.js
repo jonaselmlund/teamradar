@@ -237,3 +237,56 @@ export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd
 
     setInterval(updatePosition, 60000); // Default to 1 minute
 };
+
+export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
+    try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        
+        if (!storedUserId) {
+            console.log('Ingen userId hittad i local storage');
+            return;
+        }
+
+        const userRef = doc(db, 'users', storedUserId);
+        const docSnap = await getDoc(userRef);
+
+        if (docSnap.exists()) {
+            setStoredName(docSnap.data().username);
+            const teamId = docSnap.data().teamId ? docSnap.data().teamId : null;
+            setTeam(teamId);
+        } else {
+            console.log('No such document!');
+        }
+    } catch (error) {
+        console.error('Error fetching username from Firestore:', error);
+    }
+};
+
+export const removeUserFromTeam = async (teamId, userId) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        console.log('Removing user from team:', userId);
+        console.log('User ref:', userRef);
+        console.log('Team ID:', teamId);
+        
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+            console.log(`No user document found for userId: ${userId}`);
+            return;
+        }
+
+        await updateDoc(userRef, { teamId: null });
+
+        // Remove user from team's members collection
+        const memberRef = query(collection(db, "teams", teamId, "members"), where("userId", "==", userId));
+        const memberSnapshot = await getDocs(memberRef);
+        memberSnapshot.forEach(async (doc) => {
+            await deleteDoc(doc.ref);
+        });
+
+        console.log(`User ${userId} removed from team ${teamId}`);
+    } catch (error) {
+        console.error('Error removing user from team:', error);
+    }
+};

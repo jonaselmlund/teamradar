@@ -8,6 +8,8 @@ import * as Location from 'expo-location';
 import { Picker } from "@react-native-picker/picker";
 import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned } from '../utils/handleName';
 import * as FileSystem from 'expo-file-system';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -68,7 +70,11 @@ const UsernameScreen = () => {
     const toggleTracking = async () => {
         const newTrackingState = !isTracking;
         setIsTracking(newTrackingState);
-        await AsyncStorage.setItem('isTracking', JSON.stringify(newTrackingState));
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, { isTracking: newTrackingState });
+        }
         if (newTrackingState) {
             startTrackingPosition();
         } else {
