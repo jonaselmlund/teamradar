@@ -86,6 +86,9 @@ import { Asset } from 'expo-asset';
 # kolla att expo camera är installerat när det blir fel i scanningen av QR:
 expo install expo-camera
 
+# trouble lista och id
+id i en lista item.id är inte samma som userid tex. 
+
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
 

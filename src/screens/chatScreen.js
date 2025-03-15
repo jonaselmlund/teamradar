@@ -84,11 +84,10 @@ const ChatScreen = () => {
                 renderItem={({ item }) => (
                     <View style={styles.messageContainer}>
                         <View style={styles.usernameRow}>
-                        <Text style={styles.username}>{item.username}</Text>
-                        <Text style={styles.timestamp}>  {item.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-        </View>
-        <Text style={styles.message}>{item.text}</Text>
+                            <Text style={styles.username}>{item.username}</Text>
+                            <Text style={styles.timestamp}>{item.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                        </View>
+                        <Text style={styles.message}>{item.text}</Text>
                     </View>
                 )}
                 keyExtractor={(item) => item.id}

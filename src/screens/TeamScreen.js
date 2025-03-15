@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, FlatList, Switch, Alert, TouchableOpacity } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
-import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, removeUserFromTeam } from '../utils/teamUtils';
+import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, removeUserFromTeam, updateTeamName } from '../utils/teamUtils';
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 const TeamScreen = () => {
   const [teamName, setTeamName] = useState("");
+  const [isEditingTeamName, setIsEditingTeamName] = useState(false);
   const [inactiveHoursStart, setInactiveHoursStart] = useState(22);
   const [inactiveHoursEnd, setInactiveHoursEnd] = useState(7);
   const [team, setTeam] = useState(null);
@@ -47,10 +48,43 @@ const TeamScreen = () => {
     }
   };
 
+  const handleUpdateTeamName = async () => {
+    try {
+      await updateTeamName(team.id, teamName);
+      Alert.alert("Success", "Team name updated.");
+      setIsEditingTeamName(false);
+    } catch (error) {
+      console.error("Error updating team name:", error);
+    }
+  };
+
   if (team) {
     return (
       <View style={{ padding: 20, flex: 1 }}>
         <Text style={{ fontSize: 20, marginBottom: 10 }}>Team: {team.name}</Text>
+        {user.isAdmin && (
+          <View>
+            {isEditingTeamName ? (
+              <View>
+                <TextInput
+                  value={teamName}
+                  onChangeText={setTeamName}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    padding: 10,
+                    marginBottom: 10,
+                    borderRadius: 5
+                  }}
+                />
+                <Button title="Spara" onPress={handleUpdateTeamName} />
+                <Button title="Avbryt" onPress={() => setIsEditingTeamName(false)} />
+              </View>
+            ) : (
+              <Button title="Ändra teamnamn" onPress={() => { setTeamName(team.name); setIsEditingTeamName(true); }} />
+            )}
+          </View>
+        )}
         <Text>Timmar på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
         <Text>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
         <QRCode style={{ alignItem: 'center' }} value={team.teamCode} size={180} />
@@ -59,7 +93,7 @@ const TeamScreen = () => {
         <Text>Medlemmar i teamet, tryck på ett namn för att visa kartan. (Ändra administratör-status med spaken till höger):</Text>
         <FlatList
           data={members}
-          keyExtractor={(item) => item.userId} // Ensure the correct user ID is used
+          keyExtractor={(item) => item.userId}
           renderItem={({ item }) => (
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
               <TouchableOpacity onPress={() => handleMemberPress(item)}>

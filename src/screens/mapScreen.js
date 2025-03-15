@@ -113,7 +113,7 @@ const MapScreen = () => {
                                 gatheringPoint: { latitude, longitude }
                             });
                             setGatheringPoint({ latitude, longitude });
-                            Alert.alert("Gathering point set!");
+                            Alert.alert("Samlingsplats markerad!");
                         }
                     }
                 ]
@@ -167,7 +167,7 @@ const MapScreen = () => {
                                     Notifications.scheduleNotificationAsync({
                                         content: {
                                             title: "Dags att samlas",
-                                            body: "Se på kartan var vi ska träffas.",
+                                            body: "Nu är det samling för teamet. Se på kartan var vi ska träffas.",
                                         },
                                         trigger: null,
                                     });
@@ -208,13 +208,13 @@ const MapScreen = () => {
             );
             Alert.alert(
                 user.username,
-                `Distance: ${distance.toFixed(0)} meters`,
+                `Avstånd: ${distance.toFixed(0)} meter`,
                 [{ text: "Close" }]
             );
         } else {
             Alert.alert(
                 user.username,
-                "Distance: N/A",
+                "Avstånd: N/A",
                 [{ text: "Close" }]
             );
         }

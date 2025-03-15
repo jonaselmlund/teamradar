@@ -290,3 +290,13 @@ export const removeUserFromTeam = async (teamId, userId) => {
         console.error('Error removing user from team:', error);
     }
 };
+
+export const updateTeamName = async (teamId, newTeamName) => {
+    try {
+        const teamRef = doc(db, 'teams', teamId);
+        await updateDoc(teamRef, { name: newTeamName });
+        console.log(`Teamnamn uppdaterat till ${newTeamName}`);
+    } catch (error) {
+        console.error('Error updating team name:', error);
+    }
+};
