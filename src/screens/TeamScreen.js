@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, Switch, Alert, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, FlatList, Switch, Alert, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { fetchUserData, fetchTeamData, createTeam, joinTeam, deleteTeam, updateTeamName } from '../utils/teamUtils';
@@ -18,6 +18,7 @@ const TeamScreen = () => {
     const [members, setMembers] = useState([]);
     const [teamCode, setTeamCode] = useState('');
     const [user, setUser] = useState(null);
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -54,65 +55,42 @@ const TeamScreen = () => {
     const renderHeader = () => (
         <View style={tw`p-4`}>
             <Text style={[tw`text-lg mb-4`, { textAlign: 'center' }]}>Team: {team.name}</Text>
+            <TouchableOpacity
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
+                onPress={() => setInfoModalVisible(true)}
+            >
+                <Icon name="info" size={20} color="white" />
+                <Text style={tw`text-white text-center text-sm  font-semibold ml-2`}>Se teaminfo/program</Text>
+            </TouchableOpacity>
             {user.isAdmin && (
                 <View>
-                    {isEditingTeamName ? (
-                        <View>
-                            <TextInput
-                                value={teamName}
-                                onChangeText={setTeamName}
-                                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
-                            />
-                            <TouchableOpacity
-                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-3 flex-row justify-center items-center`}
-                                onPress={handleUpdateTeamName}
-                            >
-                                <Icon name="save" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Spara</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={tw`bg-gray-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
-                                onPress={() => setIsEditingTeamName(false)}
-                            >
-                                <Icon name="cancel" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Avbryt</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View>
-                            <TouchableOpacity
-                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
-                                onPress={() => { setTeamName(team.name); setIsEditingTeamName(true); }}
-                            >
-                                <Icon name="edit" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ändra teamnamn</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
-                                onPress={() => navigation.navigate('TeamSettingsScreen', { teamId: team.id })}
-                            >
-                                <Icon name="settings" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Teaminställningar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
-                                onPress={() => navigation.navigate('ExtraFunctionsScreen', { teamMembers: members })}
-                            >
-                                <Icon name="functions" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Extra Funktioner</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    <TouchableOpacity
+                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md mt-2 mb-2 flex-row justify-center items-center`}
+                        onPress={() => navigation.navigate('TeamSettingsScreen', { teamId: team.id })}
+                    >
+                        <Icon name="settings" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Teaminställningar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
+                        onPress={() => navigation.navigate('ExtraFunctionsScreen', { teamMembers: members })}
+                    >
+                        <Icon name="functions" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Extra Funktioner</Text>
+                    </TouchableOpacity>
                 </View>
             )}
             <Text style={tw`text-sm mb-2`}>Tid på dygnet när kartan inte uppdateras: {team.inactiveHours.start} - {team.inactiveHours.end}</Text>
-            <Text style={tw`text-sm mb-2`}>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
-            <View style={tw`justify-center items-center`}>
-                <QRCode style={tw`self-center mb-4`} value={team.teamCode} size={100} />
-            </View>
-            <Text style={[tw`text-sm mt-2 mb-2`, { textAlign: 'center' }]}>Teamkod, kan användas istället för QR-kod:</Text>
-            <Text style={[tw`text-2xl font-bold mb-2`, { textAlign: 'center' }]}>{team.teamCode}</Text>
-
+            {!team.isLockedForNewMembers && (
+                <>
+                    <Text style={tw`text-sm mb-2`}>Använd denna QR-kod för att bjuda in andra till teamet:</Text>
+                    <View style={tw`justify-center items-center`}>
+                        <QRCode style={tw`self-center mb-4`} value={team.teamCode} size={100} />
+                    </View>
+                    <Text style={[tw`text-sm mt-2 mb-2`, { textAlign: 'center' }]}>Teamkod, kan användas istället för QR-kod:</Text>
+                    <Text style={[tw`text-2xl font-bold mb-2`, { textAlign: 'center' }]}>{team.teamCode}</Text>
+                </>
+            )}
             <TouchableOpacity
                 style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
                 onPress={() => navigation.navigate('MapScreen')}
@@ -127,6 +105,7 @@ const TeamScreen = () => {
                 <Icon name="chat" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>
             </TouchableOpacity>
+  
             <Text style={tw`text-sm mt-2 mb-2`}>Medlemmar i teamet:</Text>
         </View>
     );
@@ -159,38 +138,58 @@ const TeamScreen = () => {
 
     if (team) {
         return (
-            <FlatList
-                data={members}
-                keyExtractor={(item) => item.userId}
-                renderItem={({ item }) => (
-                    <View style={tw`flex-row justify-between items-center p-0 mb-1 bg-gray-200 rounded-lg shadow`}>
-                        <TouchableOpacity onPress={() => handleMemberPress(item)}>
-                            <Text style={tw`text-sm`}>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
+            <View style={tw`flex-1`}>
+                <FlatList
+                    data={members}
+                    keyExtractor={(item) => item.userId}
+                    renderItem={({ item }) => (
+                        <View style={tw`flex-row justify-between items-center p-0 mb-1 bg-gray-200 rounded-lg shadow`}>
+                            <TouchableOpacity onPress={() => handleMemberPress(item)}>
+                                <Text style={tw`text-sm`}>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
+                            </TouchableOpacity>
+                            {user.isAdmin && (
+                                <>
+                                    <Switch
+                                        value={item.isAdmin}
+                                        onValueChange={() => handleToggleAdminStatus(team.id, item.userId, !item.isAdmin, setMembers)}
+                                    />
+                                    {user.userId !== item.userId && (
+                                        <TouchableOpacity
+                                            style={tw`bg-red-500 p-1 rounded-lg shadow-md flex-row justify-center items-center`}
+                                            onPress={() => handleRemoveUser(team.id, item.userId, setMembers)}
+                                        >
+                                            <Icon name="delete" size={20} color="white" />
+                                            <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ta bort</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </>
+                            )}
+                        </View>
+                    )}
+                    ListHeaderComponent={renderHeader}
+                    ListFooterComponent={renderFooter}
+                    contentContainerStyle={tw`p-4`}
+                    ListFooterComponentStyle={tw`mb-4`}
+                />
+                <Modal
+                    visible={infoModalVisible}
+                    animationType="slide"
+                    onRequestClose={() => setInfoModalVisible(false)}
+                >
+                    <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
+                        <ScrollView style={tw`w-full max-w-md`}>
+                            <Text style={tw`text-sm`}>{team.informationText}</Text>
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={tw`bg-blue-500 p-2 rounded-lg shadow-md flex-row justify-center items-center mt-4`}
+                            onPress={() => setInfoModalVisible(false)}
+                        >
+                            <Icon name="close" size={20} color="white" />
+                            <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Stäng</Text>
                         </TouchableOpacity>
-                        {user.isAdmin && (
-                            <>
-                                <Switch
-                                    value={item.isAdmin}
-                                    onValueChange={() => handleToggleAdminStatus(team.id, item.userId, !item.isAdmin, setMembers)}
-                                />
-                                {user.userId !== item.userId && (
-                                    <TouchableOpacity
-                                        style={tw`bg-red-500 p-1 rounded-lg shadow-md flex-row justify-center items-center`}
-                                        onPress={() => handleRemoveUser(team.id, item.userId, setMembers)}
-                                    >
-                                        <Icon name="delete" size={20} color="white" />
-                                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ta bort</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </>
-                        )}
                     </View>
-                )}
-                ListHeaderComponent={renderHeader}
-                ListFooterComponent={renderFooter}
-                contentContainerStyle={tw`p-4`}
-                ListFooterComponentStyle={tw`mb-4`}
-            />
+                </Modal>
+            </View>
         );
     }
 

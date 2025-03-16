@@ -103,6 +103,19 @@ npm install @react-native-community/datetimepicker
 
 Om fel med navigation, kolla att inte någon kommentar är inne i stack navigator
 
+# create index collection
+Steps to Create the Firestore Index
+Open the Firebase Console: Go to the Firebase Console.
+Select Your Project: Select your project (teamradar-c118e).
+Go to Firestore Database: In the left-hand menu, click on "Firestore Database".
+Indexes: Click on the "Indexes" tab.
+Create Index: Click on the "Create Index" button.
+Configure the Index:
+Collection ID: messages
+Fields:
+teamId - Ascending
+timestamp - Ascending
+Create: Click the "Create" button to create the index.
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
 

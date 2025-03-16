@@ -118,8 +118,10 @@ const TeamSettingsScreen = ({ route }) => {
             <TextInput
                 value={informationText}
                 onChangeText={setInformationText}
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
+                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white h-32`}
                 multiline
+                numberOfLines={5}
+                 textAlignVertical="top"
             />
             <TouchableOpacity
                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}

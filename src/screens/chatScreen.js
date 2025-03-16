@@ -54,7 +54,7 @@ const ChatScreen = () => {
                 timestamp: Timestamp.fromDate(new Date()), 
             };
             await addDoc(collection(db, 'messages'), newMessage);
-
+            console.log('Message sent:', newMessage);
             setMessage('');
 
             // Fetch team members with chat notifications enabled
