@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import uuid from 'react-native-uuid';
 
 export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
@@ -87,24 +87,52 @@ export const handleResetApp = async (setStoredName, setUsername, setUserId, setT
     }
 };
 
-export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, setTeamName, startTrackingPosition) => {
+export const handleJoinTeamWithCode = async (teamCodeInput, setTeam, setTeamName, startTrackingPosition) => {
     if (!teamCodeInput.trim()) {
         alert("Ange en team-kod!");
         return;
     }
 
     try {
-        const teamDoc = await getDoc(doc(db, "teams", teamCodeInput));
-        if (teamDoc.exists()) {
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+            alert("Användar-ID saknas. Kan inte gå med i teamet.");
+            return;
+        }
+
+        const teamQuery = query(collection(db, "teams"), where("teamCode", "==", teamCodeInput));
+        const teamSnapshot = await getDocs(teamQuery);
+
+        if (!teamSnapshot.empty) {
+            const teamDoc = teamSnapshot.docs[0];
+            const teamId = teamDoc.id;
+
+            // Ensure teamId is not undefined
+            if (!teamId) {
+                alert("Team-koden är ogiltig!");
+                return;
+            }
+
+            // Update the user's document with the teamId and isAdmin fields
             await updateDoc(doc(db, "users", userId), {
-                teamId: teamCodeInput,
+                teamId: teamId,
+                isAdmin: false
+            });
+
+            // Add the user to the team's members collection
+            const userDoc = await getDoc(doc(db, "users", userId));
+            const username = userDoc.data().username;
+
+            await addDoc(collection(db, "teams", teamId, "members"), {
+                userId: userId,
+                username: username,
                 isAdmin: false
             });
 
             alert("Gick med i teamet!");
-            setTeam(teamCodeInput);
-            setTeamName(teamDoc.data().name);
-            startTrackingPosition();
+            if (setTeam) setTeam(teamId);
+            if (setTeamName) setTeamName(teamDoc.data().name);
+            if (startTrackingPosition) startTrackingPosition();
         } else {
             alert("Team-koden är ogiltig!");
         }

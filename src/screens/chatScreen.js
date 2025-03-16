@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, FlatList, Text, TouchableOpacity } from 'react-native';
-import { firebase } from '../firebaseConfig'; // Import Firebase configuration
-import { collection, addDoc, getDocs, getDoc, doc, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';  // Adjust to correct path
+import { collection, addDoc, getDocs, getDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -15,6 +14,7 @@ const ChatScreen = () => {
     const [messages, setMessages] = useState([]);
     const [teamId, setTeamId] = useState(null);
     const [username, setUsername] = useState('');
+    const navigation = useNavigation();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -34,7 +34,7 @@ const ChatScreen = () => {
     useEffect(() => {
         if (!teamId) return;
 
-        const q = query(collection(db, 'messages'), where('teamId', '==', teamId));
+        const q = query(collection(db, 'messages'), where('teamId', '==', teamId), orderBy('timestamp', 'asc'));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const messagesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setMessages(messagesData);

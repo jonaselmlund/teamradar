@@ -74,12 +74,13 @@ const UsernameScreen = () => {
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
             const userRef = doc(db, 'users', userId);
-            await updateDoc(userRef, { isTracking: newTrackingState });
-        }
-        if (newTrackingState) {
-            startTrackingPosition();
-        } else {
-            clearInterval(startTrackingPosition);
+            if (newTrackingState) {
+                await updateDoc(userRef, { isTracking: newTrackingState });
+                startTrackingPosition();
+            } else {
+                await updateDoc(userRef, { isTracking: newTrackingState, latitude: null, longitude: null });
+                clearInterval(startTrackingPosition);
+            }
         }
     };
 

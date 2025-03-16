@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, Switch, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
-import { fetchUserData, fetchTeamData, fetchMembers, createTeam, joinTeam, toggleAdminStatus, deleteTeam, createTestUser, removeUserFromTeam, updateTeamName } from '../utils/teamUtils';
+import { fetchUserData, fetchTeamData, createTeam, joinTeam, deleteTeam, updateTeamName } from '../utils/teamUtils';
+import { fetchMembers, handleRemoveUser, handleToggleAdminStatus, handleCreateTestUser } from '../utils/memberUtils';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import tw from 'twrnc';
@@ -39,17 +40,6 @@ const TeamScreen = () => {
         navigation.navigate('MapScreen', { member });
     };
 
-    const handleRemoveUser = async (memberId) => {
-        try {
-            await removeUserFromTeam(team.id, memberId);
-            Alert.alert('Success', 'User removed from the team.');
-            console.log(`User ${memberId} removed from team ${team.id}`);
-            fetchMembers(team.id, setMembers); // Refresh the members list
-        } catch (error) {
-            console.error('Error removing user from team:', error);
-        }
-    };
-
     const handleUpdateTeamName = async () => {
         try {
             console.log('Updating team name with:', teamName);
@@ -59,26 +49,6 @@ const TeamScreen = () => {
         } catch (error) {
             console.error('Error updating team name:', error);
         }
-    };
-
-    const handleToggleAdminStatus = async (memberId, isAdmin) => {
-        try {
-            console.log('memberId:', memberId);
-            console.log('isAdmin:', isAdmin);
-            console.log('team.id:', team.id);
-            await toggleAdminStatus(team.id, memberId, !isAdmin);
-            fetchMembers(team.id, setMembers); // Refresh the members list
-        } catch (error) {
-            console.error('Error toggling admin status:', error);
-        }
-    };
-
-    const handleCreateTestUser = async () => {
-        if (team.isLockedForNewMembers) {
-            Alert.alert('Teamet tar inte emot nya medlemmar. Prata med en teamadministratör.');
-            return;
-        }
-        await createTestUser(team.id, setMembers);
     };
 
     const renderHeader = () => (
@@ -157,7 +127,7 @@ const TeamScreen = () => {
                 <Icon name="chat" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>
             </TouchableOpacity>
-            <Text style={tw`text-sm mt-2 mb-2`}>Medlemmar i teamet. (Ändra administratör-status med spaken):</Text>
+            <Text style={tw`text-sm mt-2 mb-2`}>Medlemmar i teamet:</Text>
         </View>
     );
 
@@ -179,7 +149,7 @@ const TeamScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                onPress={handleCreateTestUser}
+                onPress={() => handleCreateTestUser(team.id, setMembers)}
             >
                 <Icon name="person-add" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa Testanvändare</Text>
@@ -197,18 +167,22 @@ const TeamScreen = () => {
                         <TouchableOpacity onPress={() => handleMemberPress(item)}>
                             <Text style={tw`text-sm`}>{item.username} {item.isAdmin ? "(Administratör)" : ""}</Text>
                         </TouchableOpacity>
-                        <Switch
-                            value={item.isAdmin}
-                            onValueChange={() => handleToggleAdminStatus(item.userId, item.isAdmin)}
-                        />
-                        {user.isAdmin && user.userId !== item.userId && (
-                            <TouchableOpacity
-                                style={tw`bg-red-500 p-1 rounded-lg shadow-md flex-row justify-center items-center`}
-                                onPress={() => handleRemoveUser(item.userId)}
-                            >
-                                <Icon name="delete" size={20} color="white" />
-                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ta bort</Text>
-                            </TouchableOpacity>
+                        {user.isAdmin && (
+                            <>
+                                <Switch
+                                    value={item.isAdmin}
+                                    onValueChange={() => handleToggleAdminStatus(team.id, item.userId, !item.isAdmin, setMembers)}
+                                />
+                                {user.userId !== item.userId && (
+                                    <TouchableOpacity
+                                        style={tw`bg-red-500 p-1 rounded-lg shadow-md flex-row justify-center items-center`}
+                                        onPress={() => handleRemoveUser(team.id, item.userId, setMembers)}
+                                    >
+                                        <Icon name="delete" size={20} color="white" />
+                                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ta bort</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </>
                         )}
                     </View>
                 )}
