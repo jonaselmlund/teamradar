@@ -14,6 +14,7 @@ const MapScreen = () => {
     const [currentUserLocation, setCurrentUserLocation] = useState(null);
     const [gatheringPoint, setGatheringPoint] = useState(null);
     const [members, setMembers] = useState([]);
+    const [mapType, setMapType] = useState('standard');
     const navigation = useNavigation();
     const route = useRoute();
     const { member } = route.params || {};
@@ -30,7 +31,8 @@ const MapScreen = () => {
                     user.latitude !== undefined &&
                     user.longitude !== undefined &&
                     !isNaN(user.latitude) &&
-                    !isNaN(user.longitude)
+                    !isNaN(user.longitude) &&
+                    user.trackingState !== false // Filter out users with trackingState set to false
                 );
                 setUsers(validUsers);
             } catch (error) {
@@ -220,11 +222,16 @@ const MapScreen = () => {
         }
     };
 
+    const toggleMapType = () => {
+        setMapType((prevMapType) => (prevMapType === 'standard' ? 'satellite' : 'standard'));
+    };
+
     return (
         <View style={styles.container}>
             <MapView
                 provider="google"
                 style={styles.map}
+                mapType={mapType}
                 initialRegion={{
                     latitude: 59.326242,
                     longitude: 18.071665,
@@ -264,8 +271,11 @@ const MapScreen = () => {
                     />
                 ))}
             </MapView>
-            <Button title="Back" onPress={() => navigation.goBack()} />
-            <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
+            <View style={styles.buttonContainer}>
+                <Button title="Tillbaka" onPress={() => navigation.goBack()} />
+                <Button title="Chat" onPress={() => navigation.navigate("ChatScreen")} />
+                <Button title="Byt karttyp" onPress={toggleMapType} />
+            </View>
         </View>
     );
 };
@@ -285,6 +295,14 @@ const styles = StyleSheet.create({
     markerText: {
         color: 'white',
         fontWeight: 'bold',
+    },
+    buttonContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 10,
+        right: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
 });
 

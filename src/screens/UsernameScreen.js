@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import tw from 'twrnc';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +27,7 @@ const UsernameScreen = () => {
     const [isTracking, setIsTracking] = useState(true);
     const [termsVisible, setTermsVisible] = useState(false);
     const [termsText, setTermsText] = useState('');
+    const [aboutVisible, setAboutVisible] = useState(false);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -70,6 +71,7 @@ const UsernameScreen = () => {
 
     const toggleTracking = async () => {
         const newTrackingState = !isTracking;
+        console.log('New tracking state:', newTrackingState);
         setIsTracking(newTrackingState);
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
@@ -273,6 +275,13 @@ const UsernameScreen = () => {
                 <Icon name="restart-alt" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Reset App, ta bort användare och börja om.</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
+                onPress={() => setAboutVisible(true)}
+            >
+                <Icon name="info" size={20} color="white" />
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Om TeamRadar</Text>
+            </TouchableOpacity>
 
             <Modal
                 visible={termsVisible}
@@ -284,6 +293,27 @@ const UsernameScreen = () => {
                         <Text style={tw`text-sm`}>{termsText}</Text>
                     </ScrollView>
                     <Button title="Stäng" onPress={() => setTermsVisible(false)} />
+                </View>
+            </Modal>
+
+            <Modal
+                visible={aboutVisible}
+                animationType="slide"
+                onRequestClose={() => setAboutVisible(false)}
+            >
+                <View style={tw`flex-1 justify-center items-center bg-gray-100`}>
+                    <Image
+                        source={require('../../assets/splash.png')}
+                        style={tw`w-full h-full`}
+                        resizeMode="contain"
+                    />
+                    <TouchableOpacity
+                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md flex-row justify-center items-center mt-4`}
+                        onPress={() => setAboutVisible(false)}
+                    >
+                        <Icon name="close" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Stäng</Text>
+                    </TouchableOpacity>
                 </View>
             </Modal>
         </View>
