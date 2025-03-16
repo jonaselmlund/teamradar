@@ -121,14 +121,15 @@ export const joinTeam = async (teamCode, user, fetchTeamData, startTrackingPosit
     }
 };
 
-export const toggleAdminStatus = async (teamId, memberId, isAdmin, members) => {
-    if (members.length === 1) {
-        alert("Det måste finnas minst en admin.");
-        return;
+export const toggleAdminStatus = async (teamId, memberId, isAdmin) => {
+    const memberRef = query(collection(db, "teams", teamId, "members"), where("userId", "==", memberId));
+    const memberSnapshot = await getDocs(memberRef);
+    if (!memberSnapshot.empty) {
+        const memberDoc = memberSnapshot.docs[0];
+        await updateDoc(memberDoc.ref, { isAdmin });
+    } else {
+        throw new Error('Member not found');
     }
-    await updateDoc(doc(db, "teams", teamId, "members", memberId), {
-        isAdmin: !isAdmin
-    });
 };
 
 export const deleteTeam = async (team, user, setTeam, setMembers) => {
@@ -291,12 +292,12 @@ export const removeUserFromTeam = async (teamId, userId) => {
     }
 };
 
-export const updateTeamName = async (teamId, newTeamName) => {
-    try {
-        const teamRef = doc(db, 'teams', teamId);
-        await updateDoc(teamRef, { name: newTeamName });
-        console.log(`Teamnamn uppdaterat till ${newTeamName}`);
-    } catch (error) {
-        console.error('Error updating team name:', error);
-    }
+export const updateTeamName = async (teamId, name) => {
+    const teamRef = doc(db, 'teams', teamId);
+    await updateDoc(teamRef, { name });
+};
+
+export const updateTeamSettings = async (teamId, settings) => {
+    const teamRef = doc(db, 'teams', teamId);
+    await updateDoc(teamRef, settings);
 };

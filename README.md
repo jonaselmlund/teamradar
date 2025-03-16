@@ -89,6 +89,20 @@ expo install expo-camera
 # trouble lista och id
 id i en lista item.id är inte samma som userid tex. 
 
+# Tailwind
+npm install twrnc
+
+# vector icons to make icons and modern
+npm install react-native-vector-icons
+
+# picker select
+npm install react-native-picker-select
+
+# date time picker install TILLFÄLLIGT BORTTTAGEN
+npm install @react-native-community/datetimepicker
+
+Om fel med navigation, kolla att inte någon kommentar är inne i stack navigator
+
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
 
@@ -101,3 +115,14 @@ as soon as an not-expired team is joined, the user starts tracking position and 
 Ändra: 1. chatten är kopplad till ett team. bara de som är med i ett team kan läsa och skriva till den team-chatten. 2. I varje chatmeddelande ska username som skriver meddelandet synas. 3. så fort ett meddelande skickas, kontrollera alla i teamets notifieringsinstälningar för chat och pusha en notifiering till de som har notifiering för chat true. 4. När ett team raderas tas hela chatten bort.
 
 in the map screen, if i mark a position (with a long press) I can decide to set a gathering point in  a pop up which will be marked in a special way. The gathering point coordinates is stored with the team and shown to all team members. The next time I press the gathering point icon om the map, i get a selection to remove gathering point or "gather now". If "gather is selected. A notification is sent to all team users with a notification setting set to enabled. It shoud say "Dags att samlas, se på kartan var vi ska träffas."
+
+skapa sidan extrafunctionsscreens som inneh¨ller följande: en meny, en tillbakaknapp och följande funktioner: 1. Välj en slumpvis teammedlem. Den ska slumpa fram en lagmedlem och visa namnet på den. Sedan sätter man en seting på medlemmen som är wasPicked= true 2. Välj en slumpvis lagmedlem som inte slumpats fram innan. Den slumpar fram en lagmedlem som har wasPicked= false. 3. Skapa 2, 3 eller 4 grupper av laget och visa dessa. Gruppernas namn ska vara ett nummer. spara temporarygroup med en siffra hos medlemmarna som är med i grupperna och skriv över nästa gång en ny sub-grupp skapas
+
+skapa en toggle för att låsa teamet för nya medlemmar islockedfornewmembers i teamsettingsscreen. Denna ska sparas i databasen. default är false. Skapa också en informationText som också ska sparas i databsen och kan editeras i teamsettingsscreen.
+
+visa bara qr-koden i teamscreen samt teamkoden om teamet inte är locked for new members. Om det är locked, skriv att det är låst för nya användare och att man kan ändra i teaminställningar om man är administratör. Bara en administratör kan se knappen  teaminstälningar. 
+
+Show the QR code and team code only if the team is not locked for new members.
+Display a message indicating that the team is locked for new members if it is locked.
+Ensure that only administrators can see the "Team Settings" button.
+Make the input field for informationText in TeamSettingsScreen 5 rows high.

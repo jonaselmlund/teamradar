@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet } from 'react-native';
+import { View, TextInput, FlatList, Text, TouchableOpacity } from 'react-native';
 import { firebase } from '../firebaseConfig'; // Import Firebase configuration
 import { collection, addDoc, getDocs, getDoc, doc, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';  // Adjust to correct path
@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Timestamp } from 'firebase/firestore';
+import tw from 'twrnc';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const ChatScreen = () => {
     const [message, setMessage] = useState('');
@@ -78,64 +80,34 @@ const ChatScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={tw`flex-1 p-4 bg-gray-100`}>
             <FlatList
                 data={messages}
                 renderItem={({ item }) => (
-                    <View style={styles.messageContainer}>
-                        <View style={styles.usernameRow}>
-                            <Text style={styles.username}>{item.username}</Text>
-                            <Text style={styles.timestamp}>{item.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    <View style={tw`p-2 mb-1 bg-gray-200 rounded-lg shadow`}>
+                        <View style={tw`flex-row justify-between items-center`}>
+                            <Text style={tw`font-bold text-xs`}>{item.username}</Text>
+                            <Text style={tw`text-gray-500 text-xs ml-2`}>{item.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                         </View>
-                        <Text style={styles.message}>{item.text}</Text>
+                        <Text style={tw`pt-1 text-gray-800 text-sm`}>{item.text}</Text>
                     </View>
                 )}
                 keyExtractor={(item) => item.id}
+                style={tw`mb-4`}
             />
-            <TextInput
-                style={styles.input}
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Type a message"
-            />
-            <Button title="Send" onPress={handleSendMessage} />
+            <View style={tw`flex-row items-center`}>
+                <TextInput
+                    style={tw`flex-1 h-10 border border-gray-400 rounded-lg p-2 bg-white`}
+                    value={message}
+                    onChangeText={setMessage}
+                    placeholder="Type a message"
+                />
+                <TouchableOpacity onPress={handleSendMessage} style={tw`ml-2`}>
+                    <Icon name="send" size={28} color="#4CAF50" />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 10,
-    },
-    input: {
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
-        marginBottom: 10,
-        padding: 10,
-    },
-    usernameRow: {
-        flexDirection: 'row',  // Gör att username och timestamp ligger bredvid varandra
-        justifyContent: 'space-between',  // Sprider ut texten på samma rad
-        alignItems: 'center',  // Centrerar dem vertikalt
-    },
-    timestamp: {
-        fontSize: 12,
-        color: 'gray',
-        marginLeft: 10, // Skapa lite utrymme mellan username och tid
-    },
-    messageContainer: {
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: 'gray',
-    },
-    username: {
-        fontWeight: 'bold',
-    },
-    message: {
-        paddingTop: 5,
-    },
-});
 
 export default ChatScreen;
