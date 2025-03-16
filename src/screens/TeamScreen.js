@@ -3,7 +3,7 @@ import { View, Text, TextInput, FlatList, Switch, Alert, TouchableOpacity, Scrol
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { fetchUserData, fetchTeamData, createTeam, joinTeam, deleteTeam, updateTeamName } from '../utils/teamUtils';
-import { fetchMembers, handleRemoveUser, handleToggleAdminStatus, handleCreateTestUser } from '../utils/memberUtils';
+import { fetchMembers, removeUserFromTeam, toggleAdminStatus, createTestUser } from '../utils/memberUtils';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import tw from 'twrnc';
@@ -55,17 +55,10 @@ const TeamScreen = () => {
     const renderHeader = () => (
         <View style={tw`p-4`}>
             <Text style={[tw`text-lg mb-4`, { textAlign: 'center' }]}>Team: {team.name}</Text>
-            <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                onPress={() => setInfoModalVisible(true)}
-            >
-                <Icon name="info" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm  font-semibold ml-2`}>Se teaminfo/program</Text>
-            </TouchableOpacity>
             {user.isAdmin && (
                 <View>
                     <TouchableOpacity
-                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md mt-2 mb-2 flex-row justify-center items-center`}
+                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
                         onPress={() => navigation.navigate('TeamSettingsScreen', { teamId: team.id })}
                     >
                         <Icon name="settings" size={20} color="white" />
@@ -105,7 +98,13 @@ const TeamScreen = () => {
                 <Icon name="chat" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>
             </TouchableOpacity>
-  
+            <TouchableOpacity
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
+                onPress={() => setInfoModalVisible(true)}
+            >
+                <Icon name="info" size={20} color="white" />
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Se teaminfo/program</Text>
+            </TouchableOpacity>
             <Text style={tw`text-sm mt-2 mb-2`}>Medlemmar i teamet:</Text>
         </View>
     );
@@ -128,7 +127,7 @@ const TeamScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                onPress={() => handleCreateTestUser(team.id, setMembers)}
+                onPress={() => createTestUser(team.id, setMembers)}
             >
                 <Icon name="person-add" size={20} color="white" />
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa Testanvändare</Text>
@@ -151,12 +150,12 @@ const TeamScreen = () => {
                                 <>
                                     <Switch
                                         value={item.isAdmin}
-                                        onValueChange={() => handleToggleAdminStatus(team.id, item.userId, !item.isAdmin, setMembers)}
+                                        onValueChange={() => toggleAdminStatus(team.id, item.userId, !item.isAdmin)}
                                     />
                                     {user.userId !== item.userId && (
                                         <TouchableOpacity
                                             style={tw`bg-red-500 p-1 rounded-lg shadow-md flex-row justify-center items-center`}
-                                            onPress={() => handleRemoveUser(team.id, item.userId, setMembers)}
+                                            onPress={() => removeUserFromTeam(team.id, item.userId)}
                                         >
                                             <Icon name="delete" size={20} color="white" />
                                             <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Ta bort</Text>

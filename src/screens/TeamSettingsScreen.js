@@ -63,7 +63,7 @@ const TeamSettingsScreen = ({ route }) => {
             console.log('Updating team settings with:', updatedSettings);
             console.log('Team ID:', teamId);
             await updateTeamSettings(teamId, updatedSettings);
-            Alert.alert('Success', 'Team settings updated.');
+            Alert.alert('Allt gick bra', 'Teaminställningar sparade.');
         } catch (error) {
             console.error('Error updating team settings:', error);
         }
