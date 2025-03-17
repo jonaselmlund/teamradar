@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import uuid from 'react-native-uuid';
+import * as Location from 'expo-location';
+import { Alert } from 'react-native';
 
 export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
     try {
@@ -87,14 +89,13 @@ export const handleResetApp = async (setStoredName, setUsername, setUserId, setT
     }
 };
 
-export const handleJoinTeamWithCode = async (teamCodeInput, setTeam, setTeamName, startTrackingPosition) => {
+export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, setTeamName, startTrackingPosition) => {
     if (!teamCodeInput.trim()) {
         alert("Ange en team-kod!");
         return;
     }
 
     try {
-        const userId = await AsyncStorage.getItem('userId');
         if (!userId) {
             alert("Användar-ID saknas. Kan inte gå med i teamet.");
             return;
@@ -166,5 +167,43 @@ export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setT
         console.error("Fel vid anslutning till team:", error);
         alert("Något gick fel vid anslutning till teamet.");
     }
+};
+
+export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd, updateFrequency) => {
+    const updatePosition = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission to access location was denied');
+            return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        const currentHour = new Date().getHours();
+
+        if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
+            console.log('Inactive hours, not updating position');
+            return;
+        }
+
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+            console.log('Ingen userId hittad i local storage');
+            return;
+        }
+
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            location: {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                timestamp: location.timestamp
+            }
+        });
+
+        console.log('Position updated:', location);
+    };
+
+    updatePosition();
+    setInterval(updatePosition, updateFrequency);
 };
 

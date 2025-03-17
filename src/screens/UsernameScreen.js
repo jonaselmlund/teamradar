@@ -4,12 +4,8 @@ import tw from 'twrnc';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera'; 
-import * as Location from 'expo-location';
 import RNPickerSelect from 'react-native-picker-select';
-import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned } from '../utils/handleName';
-import * as FileSystem from 'expo-file-system';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned, startTrackingPosition, toggleTracking, showTerms } from '../utils/handleName';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const UsernameScreen = () => {
@@ -40,52 +36,6 @@ const UsernameScreen = () => {
         }, [])
     );
 
-    const startTrackingPosition = async () => {
-        const updatePosition = async () => {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission to access location was denied');
-                return;
-            }
-
-            const location = await Location.getCurrentPositionAsync({});
-            const currentHour = new Date().getHours();
-
-            if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
-                console.log('Inactive hours, not updating position.');
-                return;
-            }
-
-            const userId = await AsyncStorage.getItem('userId');
-            if (userId) {
-                const userRef = doc(db, 'users', userId);
-                await updateDoc(userRef, {
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude
-                });
-            }
-        };
-
-        setInterval(updatePosition, updateFrequency);
-    };
-
-    const toggleTracking = async () => {
-        const newTrackingState = !isTracking;
-        console.log('New tracking state:', newTrackingState);
-        setIsTracking(newTrackingState);
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-            const userRef = doc(db, 'users', userId);
-            if (newTrackingState) {
-                await updateDoc(userRef, { isTracking: newTrackingState });
-                startTrackingPosition();
-            } else {
-                await updateDoc(userRef, { isTracking: newTrackingState, latitude: null, longitude: null });
-                clearInterval(startTrackingPosition);
-            }
-        }
-    };
-
     useEffect(() => {
         (async () => {
             const { status } = await Camera.requestCameraPermissionsAsync();
@@ -99,26 +49,10 @@ const UsernameScreen = () => {
         })();
     }, []);
 
-    const loadTerms = async () => {
-        try {
-            const response = await fetch('https://frontix.se/teamradar/terms.txt');
-            const terms = await response.text();
-            console.log(terms);
-            setTermsText(terms);
-        } catch (error) {
-            console.error('Error loading terms:', error);
-        }
-    };
-
-    const showTerms = async () => {
-        await loadTerms();
-        setTermsVisible(true);
-    };
-
     if (scanning) {
         return (
             <Camera
-                onBarCodeScanned={(data) => handleBarCodeScanned(data, userId, setTeam, setTeamName, startTrackingPosition)}
+                onBarCodeScanned={(data) => handleBarCodeScanned(data, userId, setTeam, setTeamName, () => startTrackingPosition(inactiveHoursStart, inactiveHoursEnd, updateFrequency))}
                 style={StyleSheet.absoluteFillObject}
             />
         );
@@ -152,7 +86,7 @@ const UsernameScreen = () => {
 
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mb-3 flex-row justify-center items-center`}
-                                onPress={toggleTracking}
+                                onPress={() => toggleTracking(isTracking, setIsTracking, inactiveHoursStart, inactiveHoursEnd, updateFrequency)}
                             >
                                 <Icon name={isTracking ? "visibility-off" : "visibility"} size={20} color="white" />
                                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>
@@ -195,7 +129,7 @@ const UsernameScreen = () => {
                             />
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
-                                onPress={() => handleJoinTeamWithCode(teamCodeInput, userId, setTeam, setTeamName, startTrackingPosition)}
+                                onPress={() => handleJoinTeamWithCode(teamCodeInput, userId, setTeam, setTeamName, () => startTrackingPosition(inactiveHoursStart, inactiveHoursEnd, updateFrequency))}
                             >
                                 <Icon name="group-add" size={20} color="white" />
                                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Gå med i team med kod</Text>
@@ -213,7 +147,7 @@ const UsernameScreen = () => {
                         onChangeText={setUsername}
                     />
                     <Text style={tw`text-base mb-4`}>Genom att skapa en användare samtycker du till våra regler och villkor.</Text>
-                    <TouchableOpacity onPress={showTerms}>
+                    <TouchableOpacity onPress={() => showTerms(setTermsVisible, setTermsText)}>
                         <Text style={tw`text-blue-500 underline`}>Läs våra regler och villkor</Text>
                     </TouchableOpacity>
                     <View style={tw`flex-row justify-between items-center mb-3 w-full max-w-md`}>

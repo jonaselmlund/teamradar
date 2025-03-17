@@ -81,6 +81,12 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
 def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
+    def localProperties = new Properties()
+def localFile = rootProject.file("local.properties")
+if (localFile.exists()) {
+    localProperties.load(new FileInputStream(localFile))
+}
+def API_KEY = localProperties.getProperty("API_KEY", "")
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion

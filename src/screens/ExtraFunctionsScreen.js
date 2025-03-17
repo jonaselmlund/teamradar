@@ -47,24 +47,38 @@ const ExtraFunctionsScreen = ({ route }) => {
             >
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Völj en slumpmässig teammedlem</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
-                onPress={() => createGroups(2)}
-            >
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 2 grupper av teamet</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
-                onPress={() => createGroups(3)}
-            >
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 3 grupper av teamet</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
-                onPress={() => createGroups(4)}
-            >
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 4 grupper av teamet</Text>
-            </TouchableOpacity>
+            {teamMembers.length > 2 && (
+                <TouchableOpacity
+                    style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                    onPress={() => createGroups(2)}
+                >
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Dela upp teamet i två och två</Text>
+                </TouchableOpacity>
+            )}
+            {teamMembers.length > 2 && (
+                <TouchableOpacity
+                    style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                    onPress={() => createGroups(3)}
+                >
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Dela upp teamet i tre och tre</Text>
+                </TouchableOpacity>
+            )}
+            {teamMembers.length > 3 && (
+                <TouchableOpacity
+                    style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                    onPress={() => createGroups(3)}
+                >
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 3 grupper av teamet</Text>
+                </TouchableOpacity>
+            )}
+            {teamMembers.length > 3 && (
+                <TouchableOpacity
+                    style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                    onPress={() => createGroups(4)}
+                >
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 4 grupper av teamet</Text>
+                </TouchableOpacity>
+            )}
             {groups.length > 0 && (
                 <View>
                     <Text style={tw`text-lg mb-4 text-center`}>Groups</Text>

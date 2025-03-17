@@ -1,55 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { fetchTeamData, updateTeamSettings } from '../utils/teamUtils';
-import { onSnapshot, doc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import tw from 'twrnc';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const TeamSettingsScreen = ({ route }) => {
+    const { teamId } = route.params;
     const [team, setTeam] = useState(null);
     const [teamName, setTeamName] = useState('');
     const [maxMembers, setMaxMembers] = useState('');
-    const [inactiveHoursStart, setInactiveHoursStart] = useState('');
-    const [inactiveHoursEnd, setInactiveHoursEnd] = useState('');
+    const [inactiveHoursStart, setInactiveHoursStart] = useState(22);
+    const [inactiveHoursEnd, setInactiveHoursEnd] = useState(7);
     const [isLockedForNewMembers, setIsLockedForNewMembers] = useState(false);
     const [informationText, setInformationText] = useState('');
     const navigation = useNavigation();
-    const { teamId } = route.params;
 
     useEffect(() => {
-        if (!teamId) {
-            console.error('No teamId provided');
-            return;
-        }
-
-        const unsubscribe = onSnapshot(doc(db, 'teams', teamId), (doc) => {
-            const teamData = doc.data();
-            if (teamData) {
+        const fetchTeamData = async () => {
+            const teamRef = doc(db, 'teams', teamId);
+            const teamDoc = await getDoc(teamRef);
+            if (teamDoc.exists()) {
+                const teamData = teamDoc.data();
                 setTeam(teamData);
                 setTeamName(teamData.name);
                 setMaxMembers(teamData.maxMembers.toString());
-                setInactiveHoursStart(teamData.inactiveHours.start.toString());
-                setInactiveHoursEnd(teamData.inactiveHours.end.toString());
-                setIsLockedForNewMembers(teamData.isLockedForNewMembers || false);
-                setInformationText(teamData.informationText || '');
-            } else {
-                console.error('No team data found');
+                setInactiveHoursStart(teamData.inactiveHours.start);
+                setInactiveHoursEnd(teamData.inactiveHours.end);
+                setIsLockedForNewMembers(teamData.isLockedForNewMembers);
+                setInformationText(teamData.informationText);
             }
-        }, (error) => {
-            console.error('Error fetching team data:', error);
-        });
+        };
 
-        return () => unsubscribe();
+        fetchTeamData();
     }, [teamId]);
 
     const handleUpdateTeamSettings = async () => {
         try {
-            if (!team) {
-                console.error('Team is not defined');
-                return;
-            }
             const updatedSettings = {
                 name: teamName,
                 maxMembers: parseInt(maxMembers),
@@ -62,10 +50,22 @@ const TeamSettingsScreen = ({ route }) => {
             };
             console.log('Updating team settings with:', updatedSettings);
             console.log('Team ID:', teamId);
-            await updateTeamSettings(teamId, updatedSettings);
+            await updateDoc(doc(db, 'teams', teamId), updatedSettings);
             Alert.alert('Allt gick bra', 'Teaminställningar sparade.');
         } catch (error) {
             console.error('Error updating team settings:', error);
+        }
+    };
+
+    const handleExtendExpiryDate = async () => {
+        try {
+            const newExpiryDate = new Date(team.expiryDate);
+            newExpiryDate.setDate(newExpiryDate.getDate() + 3);
+            await updateDoc(doc(db, 'teams', teamId), { expiryDate: newExpiryDate.toISOString() });
+            setTeam({ ...team, expiryDate: newExpiryDate.toISOString() });
+            Alert.alert('Success', 'Team expiry date extended by 3 days.');
+        } catch (error) {
+            console.error('Error extending expiry date:', error);
         }
     };
 
@@ -79,56 +79,64 @@ const TeamSettingsScreen = ({ route }) => {
 
     return (
         <View style={tw`flex-1 p-4 bg-gray-100`}>
-            <Text style={tw`text-lg mb-4 text-center`}>Teaminställningar</Text>
-            <Text style={tw`text-sm mb-2`}>Teamnamn:</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mb-4`}>
+                <Icon name="arrow-back" size={24} color="black" />
+            </TouchableOpacity>
+            <Text style={tw`text-lg mb-4 text-center`}>Team Settings</Text>
             <TextInput
+                placeholder="Team Name"
                 value={teamName}
                 onChangeText={setTeamName}
                 style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
             />
-            <Text style={tw`text-sm mb-2`}>Max antal medlemmar:</Text>
             <TextInput
+                placeholder="Max Members"
                 value={maxMembers}
                 onChangeText={setMaxMembers}
                 keyboardType="numeric"
                 style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
             />
-            <Text style={tw`text-sm mb-2`}>Start inaktivitetsperiod:</Text>
             <TextInput
-                value={inactiveHoursStart}
-                onChangeText={setInactiveHoursStart}
+                placeholder="Inactive Hours Start"
+                value={inactiveHoursStart.toString()}
+                onChangeText={(text) => setInactiveHoursStart(Number(text))}
                 keyboardType="numeric"
                 style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
             />
-            <Text style={tw`text-sm mb-2`}>Slut inaktivitetsperiod:</Text>
             <TextInput
-                value={inactiveHoursEnd}
-                onChangeText={setInactiveHoursEnd}
+                placeholder="Inactive Hours End"
+                value={inactiveHoursEnd.toString()}
+                onChangeText={(text) => setInactiveHoursEnd(Number(text))}
                 keyboardType="numeric"
+                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
+            />
+            <TextInput
+                placeholder="Information Text"
+                value={informationText}
+                onChangeText={setInformationText}
                 style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
             />
             <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-sm`}>Är teamet låst för nya medlemmar?</Text>
+                <Text style={tw`text-sm`}>Lock for New Members</Text>
                 <Switch
                     value={isLockedForNewMembers}
                     onValueChange={setIsLockedForNewMembers}
                 />
             </View>
-            <Text style={tw`text-sm mb-2`}>Teaminfo/program:</Text>
-            <TextInput
-                value={informationText}
-                onChangeText={setInformationText}
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white h-32`}
-                multiline
-                numberOfLines={5}
-                 textAlignVertical="top"
-            />
             <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
                 onPress={handleUpdateTeamSettings}
             >
                 <Icon name="save" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Spara nya inställningar</Text>
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Save Settings</Text>
+            </TouchableOpacity>
+            <Text style={tw`text-sm mb-2`}>Expiry Date: {new Date(team.expiryDate).toLocaleDateString()}</Text>
+            <TouchableOpacity
+                style={tw`bg-green-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
+                onPress={handleExtendExpiryDate}
+            >
+                <Icon name="date-range" size={20} color="white" />
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Extend Expiry Date by 3 Days</Text>
             </TouchableOpacity>
         </View>
     );

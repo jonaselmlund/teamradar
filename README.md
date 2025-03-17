@@ -177,7 +177,7 @@ configurations.all {
         eas build --platform android --profile production
 
         nu funkar det till slut. build finsihed
-        
+
 ###############################
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
@@ -202,3 +202,9 @@ Show the QR code and team code only if the team is not locked for new members.
 Display a message indicating that the team is locked for new members if it is locked.
 Ensure that only administrators can see the "Team Settings" button.
 Make the input field for informationText in TeamSettingsScreen 5 rows high.
+
+2025-03-17
+lägg till knappar där man kan "dela upp teamet i två och två" och "dela upp gruppen i tre och tre" där man parar ihop två personer i en grupp eller tre personer i varje grupp. Om teamet bara innehåller två personer ska dessa knappar inte synas. Visa inte knapparna creategroups(3) och (4) som redan finns om teamet innehåller 3 eller färre medlemmar.
+
+if team expiry date has passed, don't show the button to the map or the chat, replace it with an alert that the "Teamets giltighetstid har passerat, ändra i teaminstälningar" In team settings screen, display expiry date and a setting to extend with 3 days if pressed.
+

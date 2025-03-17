@@ -52,6 +52,13 @@ const TeamScreen = () => {
         }
     };
 
+    const isTeamExpired = () => {
+        if (!team || !team.expiryDate) return false;
+        const expiryDate = new Date(team.expiryDate);
+        const currentDate = new Date();
+        return currentDate > expiryDate;
+    };
+
     const renderHeader = () => (
         <View style={tw`p-4`}>
             <Text style={[tw`text-lg mb-4`, { textAlign: 'center' }]}>Team: {team.name}</Text>
@@ -84,20 +91,28 @@ const TeamScreen = () => {
                     <Text style={[tw`text-2xl font-bold mb-2`, { textAlign: 'center' }]}>{team.teamCode}</Text>
                 </>
             )}
-            <TouchableOpacity
-                style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                onPress={() => navigation.navigate('MapScreen')}
-            >
-                <Icon name="map" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-1`}>Visa Karta</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                onPress={() => navigation.navigate('ChatScreen')}
-            >
-                <Icon name="chat" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>
-            </TouchableOpacity>
+            {isTeamExpired() ? (
+                <Text style={tw`text-red-500 text-center text-sm font-semibold mb-2`}>
+                    Teamets giltighetstid har passerat, ändra i teaminstälningar
+                </Text>
+            ) : (
+                <>
+                    <TouchableOpacity
+                        style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
+                        onPress={() => navigation.navigate('MapScreen')}
+                    >
+                        <Icon name="map" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-1`}>Visa Karta</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
+                        onPress={() => navigation.navigate('ChatScreen')}
+                    >
+                        <Icon name="chat" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>
+                    </TouchableOpacity>
+                </>
+            )}
             <TouchableOpacity
                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
                 onPress={() => setInfoModalVisible(true)}
