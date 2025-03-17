@@ -116,6 +116,39 @@ Fields:
 teamId - Ascending
 timestamp - Ascending
 Create: Click the "Create" button to create the index.
+
+#############################
+
+BUILD
+
+##############################
+expo prebuild to create gradle.file?
+
+The slug field in your app.json file should be a short, URL-friendly identifier for your app. It should not contain spaces or special characters. Currently, your slug is set to "How to keep in touch with your team.", which is not a valid slug.
+
+npm install -g eas-cli
+eas init
+
+eas build:configure
+eas build --platform android --profile production
+generate a new keystore in the cloud
+
+firebaseconfig  är inte i git, därför funkar det inte, måste flytta till eas.json och göra följande:
+npm install expo-constants
+
+const firebaseConfig = {
+  apiKey: Constants.manifest.extra.FIREBASE_API_KEY,
+  authDomain: Constants.manifest.extra.FIREBASE_AUTH_DOMAIN,
+  projectId: Constants.manifest.extra.FIREBASE_PROJECT_ID
+};
+
+git add src/firebaseConfig.js
+git commit -m "Use environment variables for Firebase config"
+eas build --platform android
+
+fler problem med Kotlin version
+
+###############################
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
 

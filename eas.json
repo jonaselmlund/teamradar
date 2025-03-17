@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 15.0.15",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "FIREBASE_API_KEY": "your_apAIzaSyD7vhdeLqD2iLDmQ56bxE1nzH9C3NTJstE",
+        "FIREBASE_AUTH_DOMAIN": "your_auth_domateamradar-c118e.firebaseapp.comin",
+        "FIREBASE_PROJECT_ID": "teamradar-c118e"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
