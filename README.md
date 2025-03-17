@@ -3,6 +3,12 @@ expo start -c
 är bäst då rensar man 
 
 # todo
+köp i appen
+emergency button
+dela upp teamet i grupper om två, tre el 4
+betalningar och uppdelning, utlägg, vem ska betala vem?
+kudos, green card, pokaler som kudos som syns.
+
 notifieringar
 köp i skapa team
 tems and conditions vid skapa namn
@@ -146,8 +152,32 @@ git add src/firebaseConfig.js
 git commit -m "Use environment variables for Firebase config"
 eas build --platform android
 
-fler problem med Kotlin version
+fler problem med Kotlin version?
+npx expo-doctor
+paket som inte är uppdaterade: 
+npx expo install --check
 
+expo prebuild
+expo install react-native-reanimated
+
+ändrat i build.gradle: 
+ //kotlinVersion = findProperty('android.kotlinVersion') ?: '2.0.21'
+        kotlinVersion = '1.9.24' //bytt
+
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion") / nytt
+
+fler fel med kotlin: i gradle:  DET FUNKAR: 
+configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+            force "org.jetbrains.kotlin:kotlin-reflect:1.9.24"
+            force "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.24"
+        }
+
+        eas build --platform android --profile production
+
+        nu funkar det till slut. build finsihed
+        
 ###############################
 # PROMPTS: teamChat:
 please help me to: 1. remove the skapa team buttom when a team is already created. 2. Only show skapa nytt team text and input fields if not team is joined or created. 3. More input fields to create team: "inactive hours" from 22-07 as default, but the two hour markings can be changed. 4. If a team is created, the user joins the team automatically. 4b. when a team is created the creating user is automatically joined to the team as administrator5. the team scren displays all info about the team including a list of members (username and if they are admins) if there is a team connected to the user. 6. all users connected to the team can either be members or admins and you can assign the admin status in the list of members connected to the team.
