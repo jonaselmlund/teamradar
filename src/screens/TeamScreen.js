@@ -99,14 +99,80 @@ const TeamScreen = () => {
                 <>
                     <TouchableOpacity
                         style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                        onPress={() => navigation.navigate('MapScreen')}
+                        onPress={() => {
+                            const currentTime = new Date();
+                            const currentHour = currentTime.getHours();
+
+                            const inactiveHoursStart = team?.inactiveHours?.start || 0;
+                            const inactiveHoursEnd = team?.inactiveHours?.end || 0;
+                            const expiryDate = team?.expiryDate ? new Date(team.expiryDate) : null;
+
+                            if (expiryDate && expiryDate < currentTime) {
+                                Alert.alert(
+                                    "Teamet inte giltigt längre",
+                                    "En administratör behöver ändra utgångsdatum."
+                                );
+                                return;
+                            }
+
+                            if (
+                                inactiveHoursStart !== undefined &&
+                                inactiveHoursEnd !== undefined &&
+                                ((inactiveHoursStart < inactiveHoursEnd &&
+                                    currentHour >= inactiveHoursStart &&
+                                    currentHour < inactiveHoursEnd) ||
+                                    (inactiveHoursStart > inactiveHoursEnd &&
+                                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd)))
+                            ) {
+                                Alert.alert(
+                                    "Teamet är i nattläge",
+                                    "Kartan är inte aktiv just nu."
+                                );
+                                return;
+                            }
+
+                            navigation.navigate('MapScreen');
+                        }}
                     >
                         <Icon name="map" size={20} color="white" />
                         <Text style={tw`text-white text-center text-sm font-semibold ml-1`}>Visa Karta</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md mt-1 flex-row justify-center items-center`}
-                        onPress={() => navigation.navigate('ChatScreen')}
+                        onPress={() => {
+                            const currentTime = new Date();
+                            const currentHour = currentTime.getHours();
+
+                            const inactiveHoursStart = team?.inactiveHours?.start || 0;
+                            const inactiveHoursEnd = team?.inactiveHours?.end || 0;
+                            const expiryDate = team?.expiryDate ? new Date(team.expiryDate) : null;
+
+                            if (expiryDate && expiryDate < currentTime) {
+                                Alert.alert(
+                                    "Teamet inte giltigt längre",
+                                    "En administratör behöver ändra utgångsdatum."
+                                );
+                                return;
+                            }
+
+                            if (
+                                inactiveHoursStart !== undefined &&
+                                inactiveHoursEnd !== undefined &&
+                                ((inactiveHoursStart < inactiveHoursEnd &&
+                                    currentHour >= inactiveHoursStart &&
+                                    currentHour < inactiveHoursEnd) ||
+                                    (inactiveHoursStart > inactiveHoursEnd &&
+                                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd)))
+                            ) {
+                                Alert.alert(
+                                    "Teamet är i nattläge",
+                                    "Chatten är inte aktiv just nu."
+                                );
+                                return;
+                            }
+
+                            navigation.navigate('ChatScreen');
+                        }}
                     >
                         <Icon name="chat" size={20} color="white" />
                         <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Chat</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Switch, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -28,8 +28,8 @@ const TeamSettingsScreen = ({ route }) => {
                 setMaxMembers(teamData.maxMembers.toString());
                 setInactiveHoursStart(teamData.inactiveHours.start);
                 setInactiveHoursEnd(teamData.inactiveHours.end);
-                setIsLockedForNewMembers(teamData.isLockedForNewMembers);
-                setInformationText(teamData.informationText);
+                setIsLockedForNewMembers(teamData.isLockedForNewMembers || false);
+                setInformationText(teamData.informationText || '');
             }
         };
 
@@ -40,16 +40,14 @@ const TeamSettingsScreen = ({ route }) => {
         try {
             const updatedSettings = {
                 name: teamName,
-                maxMembers: parseInt(maxMembers),
+                maxMembers: parseInt(maxMembers) || 0,
                 inactiveHours: {
-                    start: parseInt(inactiveHoursStart),
-                    end: parseInt(inactiveHoursEnd)
+                    start: parseInt(inactiveHoursStart) || 0,
+                    end: parseInt(inactiveHoursEnd) || 0
                 },
-                isLockedForNewMembers,
-                informationText
+                isLockedForNewMembers: !!isLockedForNewMembers,
+                informationText: informationText || ''
             };
-            console.log('Updating team settings with:', updatedSettings);
-            console.log('Team ID:', teamId);
             await updateDoc(doc(db, 'teams', teamId), updatedSettings);
             Alert.alert('Allt gick bra', 'Teaminställningar sparade.');
         } catch (error) {
@@ -59,86 +57,110 @@ const TeamSettingsScreen = ({ route }) => {
 
     const handleExtendExpiryDate = async () => {
         try {
-            const newExpiryDate = new Date(team.expiryDate);
+            const currentExpiryDate = team.expiryDate?.toDate ? team.expiryDate.toDate() : new Date();
+
+            if (isNaN(currentExpiryDate.getTime())) {
+                console.error('Invalid expiry date:', team.expiryDate);
+                throw new Error('Invalid expiry date');
+            }
+
+            const newExpiryDate = new Date(currentExpiryDate);
             newExpiryDate.setDate(newExpiryDate.getDate() + 3);
-            await updateDoc(doc(db, 'teams', teamId), { expiryDate: newExpiryDate.toISOString() });
-            setTeam({ ...team, expiryDate: newExpiryDate.toISOString() });
-            Alert.alert('Success', 'Team expiry date extended by 3 days.');
+
+            await updateDoc(doc(db, 'teams', teamId), { expiryDate: newExpiryDate });
+
+            setTeam({ ...team, expiryDate: newExpiryDate });
+
+            Alert.alert('Allt gick bra.', 'Teamets giltighetstid har utökats med tre dagar.');
         } catch (error) {
             console.error('Error extending expiry date:', error);
+            Alert.alert('Fel', 'Kunde inte förlänga teamets giltighetstid. Kontrollera datumformatet.');
         }
     };
 
     if (!team) {
         return (
             <View style={tw`flex-1 p-4 bg-gray-100`}>
-                <Text style={tw`text-lg mb-4 text-center`}>Loading...</Text>
+                <Text style={tw`text-lg mb-4 text-center`}>Laddar...</Text>
             </View>
         );
     }
 
     return (
-        <View style={tw`flex-1 p-4 bg-gray-100`}>
+        <ScrollView style={tw`flex-1 bg-gray-100`} contentContainerStyle={tw`p-4`}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mb-4`}>
                 <Icon name="arrow-back" size={24} color="black" />
             </TouchableOpacity>
-            <Text style={tw`text-lg mb-4 text-center`}>Team Settings</Text>
+            <Text style={tw`text-lg mb-4 text-center`}>Teaminställningar</Text>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-base mb-1 text-center`}>Teamnamn:</Text>
+                <TextInput
+                    placeholder="Team Name"
+                    value={teamName}
+                    onChangeText={setTeamName}
+                    style={tw`border border-gray-400 rounded-lg p-2 mb-2 bg-white w-60 text-left`}
+                />
+            </View>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-base mb-2 text-center`}>Max antal medlemmar i teamet:</Text>
+                <TextInput
+                    placeholder="Max Members"
+                    value={maxMembers}
+                    onChangeText={setMaxMembers}
+                    keyboardType="numeric"
+                    style={tw`border border-gray-400 rounded-lg p-1 mb-1 bg-white w-20 text-center`}
+                />
+            </View>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-base`}>Nattläge på mellan:</Text>
+                <TextInput
+                    placeholder="HH"
+                    value={inactiveHoursStart.toString()}
+                    onChangeText={(text) => setInactiveHoursStart(text.replace(/[^0-9]/g, '').slice(0, 2))}
+                    keyboardType="numeric"
+                    style={tw`border border-gray-400 rounded-lg p-1 bg-white w-20 text-center`}
+                />
+                <Text style={tw`text-base`}>och:</Text>
+                <TextInput
+                    placeholder="HH"
+                    value={inactiveHoursEnd.toString()}
+                    onChangeText={(text) => setInactiveHoursEnd(text.replace(/[^0-9]/g, '').slice(0, 2))}
+                    keyboardType="numeric"
+                    style={tw`border border-gray-400 rounded-lg p-1 bg-white w-20 text-center`}
+                />
+            </View>
+            <Text style={tw`text-base mb-2 text-center`}>Teaminfo/program:</Text>
             <TextInput
-                placeholder="Team Name"
-                value={teamName}
-                onChangeText={setTeamName}
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
-            />
-            <TextInput
-                placeholder="Max Members"
-                value={maxMembers}
-                onChangeText={setMaxMembers}
-                keyboardType="numeric"
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
-            />
-            <TextInput
-                placeholder="Inactive Hours Start"
-                value={inactiveHoursStart.toString()}
-                onChangeText={(text) => setInactiveHoursStart(Number(text))}
-                keyboardType="numeric"
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
-            />
-            <TextInput
-                placeholder="Inactive Hours End"
-                value={inactiveHoursEnd.toString()}
-                onChangeText={(text) => setInactiveHoursEnd(Number(text))}
-                keyboardType="numeric"
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
-            />
-            <TextInput
-                placeholder="Information Text"
                 value={informationText}
                 onChangeText={setInformationText}
-                style={tw`border border-gray-400 rounded-lg p-2 mb-4 bg-white`}
+                style={tw`border border-gray-400 rounded-lg p-2 mb-2 bg-white h-32`}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
             />
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-sm`}>Lock for New Members</Text>
+            <View style={tw`flex-row justify-between items-center mb-1`}>
+                <Text style={tw`text-sm`}>Ska laget vara låst för nya medlemmar?</Text>
                 <Switch
                     value={isLockedForNewMembers}
                     onValueChange={setIsLockedForNewMembers}
                 />
             </View>
             <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
                 onPress={handleUpdateTeamSettings}
             >
                 <Icon name="save" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Save Settings</Text>
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Spara teaminställningar</Text>
             </TouchableOpacity>
-            <Text style={tw`text-sm mb-2`}>Expiry Date: {new Date(team.expiryDate).toLocaleDateString()}</Text>
+            <Text style={tw`text-sm mb-2`}>Teamets giltighetstid: {new Date(team.expiryDate).toLocaleDateString()}</Text>
             <TouchableOpacity
                 style={tw`bg-green-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
                 onPress={handleExtendExpiryDate}
             >
                 <Icon name="date-range" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Extend Expiry Date by 3 Days</Text>
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Förläng teamets giltighet med tre dagar.</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 };
 

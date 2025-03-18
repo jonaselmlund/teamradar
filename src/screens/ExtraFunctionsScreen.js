@@ -12,19 +12,19 @@ const ExtraFunctionsScreen = ({ route }) => {
     const pickRandomMember = () => {
         console.log('Antal medlemmar:', teamMembers.length);
         if (teamMembers.length === 0) {
-            Alert.alert('No Members', 'There are no team members to pick from.');
+            Alert.alert('Inga teammedlemmar', 'Det finns inga teammedlemmar att välja bland.');
             return;
         }
         const randomIndex = Math.floor(Math.random() * teamMembers.length);
         console.log('randomIndex:', randomIndex);
         const member = teamMembers[randomIndex];
-        console.log('Picked Member:', teamMembers[randomIndex].username);
-        Alert.alert('Random Member', `Picked Member: ${member.username}`);
+        console.log('Utvald medlem:', teamMembers[randomIndex].username);
+        Alert.alert('Utvald medlem', `Vald medlem blev: ${member.username}`);
     };
 
     const createGroups = (numGroups) => {
         if (teamMembers.length === 0) {
-            Alert.alert('No Members', 'There are no team members to create groups.');
+            Alert.alert('Inga medlemmar', 'DEt finns inga medlemmar att skapa grupper av.');
             return;
         }
         const shuffledMembers = [...teamMembers].sort(() => 0.5 - Math.random());
@@ -47,20 +47,13 @@ const ExtraFunctionsScreen = ({ route }) => {
             >
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Völj en slumpmässig teammedlem</Text>
             </TouchableOpacity>
+            
             {teamMembers.length > 2 && (
                 <TouchableOpacity
                     style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
                     onPress={() => createGroups(2)}
                 >
-                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Dela upp teamet i två och två</Text>
-                </TouchableOpacity>
-            )}
-            {teamMembers.length > 2 && (
-                <TouchableOpacity
-                    style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
-                    onPress={() => createGroups(3)}
-                >
-                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Dela upp teamet i tre och tre</Text>
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 2 grupper av teamet</Text>
                 </TouchableOpacity>
             )}
             {teamMembers.length > 3 && (
@@ -81,10 +74,10 @@ const ExtraFunctionsScreen = ({ route }) => {
             )}
             {groups.length > 0 && (
                 <View>
-                    <Text style={tw`text-lg mb-4 text-center`}>Groups</Text>
+                    <Text style={tw`text-lg mb-4 text-center`}>Grupper</Text>
                     {groups.map((group, index) => (
                         <View key={index} style={tw`mb-4`}>
-                            <Text style={tw`text-md mb-2`}>Group {index + 1}</Text>
+                            <Text style={tw`text-md mb-2`}>Grupp {index + 1}</Text>
                             {group.map(member => (
                                 <Text key={member.id} style={tw`text-sm`}>{member.username}</Text>
                             ))}

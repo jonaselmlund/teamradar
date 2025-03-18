@@ -138,46 +138,49 @@ const UsernameScreen = () => {
                     )}
                 </>
             ) : (
-                <>
-                     <Text style={tw`text-base mb-4`}>Inget namn sparat än.</Text>
-                    <TextInput
-                        style={tw`border border-gray-400 rounded-lg p-2 mb-3 w-full max-w-md`}
-                        placeholder="Ange ditt namn"
-                        value={username}
-                        onChangeText={setUsername}
-                    />
-                    <Text style={tw`text-base mb-4`}>Genom att skapa en användare samtycker du till våra regler och villkor.</Text>
-                    <TouchableOpacity onPress={() => showTerms(setTermsVisible, setTermsText)}>
-                        <Text style={tw`text-blue-500 underline`}>Läs våra regler och villkor</Text>
-                    </TouchableOpacity>
-                    <View style={tw`flex-row justify-between items-center mb-3 w-full max-w-md`}>
-                        <Text style={tw`text-sm`}>Allmäna notifieringar på?</Text>
-                        <Switch
-                            value={notificationSetting}
-                            onValueChange={setNotificationSetting}
-                        />
-                    </View>
-                    <View style={tw`flex-row justify-between items-center mb-3 w-full max-w-md`}>
-                        <Text style={tw`text-sm`}>Notifieringar från chat på?</Text>
-                        <Switch
-                            value={chatNotificationSetting}
-                            onValueChange={setChatNotificationSetting}
-                        />
-                    </View>
-                    <TouchableOpacity
-                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
-                        onPress={() => handleSaveName(username, notificationSetting, chatNotificationSetting, setStoredName)}
-                    >
-                        <Icon name="save" size={20} color="white" />
-                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Spara Namn</Text>
-                    </TouchableOpacity>
-                </>
+                <Text style={tw`text-base mb-4`}>Inget namn sparat än.</Text>
             )}
             {team ? (
                 <View style={tw`mt-3 w-full items-center`}>
                     <TouchableOpacity
                         style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center mb-3`}
-                        onPress={() => navigation.navigate("MapScreen")}
+                        onPress={() => {
+                            const currentTime = new Date();
+                            const currentHour = currentTime.getHours();
+
+                            // Get inactive hours from the team
+                            const inactiveHoursStart = team?.inactiveHours?.start || 0;
+                            const inactiveHoursEnd = team?.inactiveHours?.end || 0;
+
+                            // Check if the team is expired
+                            if (team.expiryDate && new Date(team.expiryDate) < currentTime) {
+                                Alert.alert(
+                                    "Teamet inte giltigt längre",
+                                    "En administratör behöver ändra utgångsdatum."
+                                );
+                                return;
+                            }
+
+                            // Check if the current time is within inactive hours
+                            if (
+                                inactiveHoursStart !== undefined &&
+                                inactiveHoursEnd !== undefined &&
+                                ((inactiveHoursStart < inactiveHoursEnd &&
+                                    currentHour >= inactiveHoursStart &&
+                                    currentHour < inactiveHoursEnd) ||
+                                    (inactiveHoursStart > inactiveHoursEnd &&
+                                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd)))
+                            ) {
+                                Alert.alert(
+                                    "Teamet är i nattläge",
+                                    "Kartan är inte aktiv just nu."
+                                );
+                                return;
+                            }
+
+                            // Navigate to the map if all conditions are met
+                            navigation.navigate("MapScreen");
+                        }}
                     >
                         <Icon name="map" size={20} color="white" />
                         <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Visa Karta</Text>

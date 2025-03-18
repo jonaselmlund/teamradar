@@ -123,6 +123,13 @@ teamId - Ascending
 timestamp - Ascending
 Create: Click the "Create" button to create the index.
 
+
+mer problem: 
+ (NOBRIDGE) ERROR  ReferenceError: Property 'Constants' doesn't exist
+
+ expo install expo-constants
+ 
+
 #############################
 
 BUILD
@@ -146,6 +153,10 @@ const firebaseConfig = {
   apiKey: Constants.manifest.extra.FIREBASE_API_KEY,
   authDomain: Constants.manifest.extra.FIREBASE_AUTH_DOMAIN,
   projectId: Constants.manifest.extra.FIREBASE_PROJECT_ID
+     apiKey: Constants.expoConfig?.extra?.FIREBASE_API_KEY || "dfsfsdf",
+    authDomain: Constants.expoConfig?.extra?.FIREBASE_AUTH_DOMAIN || "dfsfsfdsf",
+    projectId: Constants.expoConfig?.extra?.FIREBASE_PROJECT_ID || "dfdsfsfs",
+    
 };
 
 git add src/firebaseConfig.js
@@ -208,3 +219,9 @@ lägg till knappar där man kan "dela upp teamet i två och två" och "dela upp 
 
 if team expiry date has passed, don't show the button to the map or the chat, replace it with an alert that the "Teamets giltighetstid har passerat, ändra i teaminstälningar" In team settings screen, display expiry date and a setting to extend with 3 days if pressed.
 
+
+
+BUILD
+
+expo prebuild
+eas build --platform android --profile production
