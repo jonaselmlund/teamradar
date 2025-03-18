@@ -12,8 +12,7 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-       "GOOGLE_API_KEY": "${env.GOOGLE_API_KEY}"
+      "autoIncrement": true
     }
   },
   "submit": {
