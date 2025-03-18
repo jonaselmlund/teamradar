@@ -61,7 +61,6 @@ export const handleSaveName = async (username, notificationSetting, chatNotifica
         console.error('Fel vid sparande av namn:', error);
     }
 };
-
 export const handleResetApp = async (setStoredName, setUsername, setUserId, setTeam, setTeamName) => {
     try {
         const storedUserId = await AsyncStorage.getItem('userId');

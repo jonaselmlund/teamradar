@@ -25,6 +25,7 @@ const UsernameScreen = () => {
     const [termsVisible, setTermsVisible] = useState(false);
     const [termsText, setTermsText] = useState('');
     const [aboutVisible, setAboutVisible] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -50,6 +51,40 @@ const UsernameScreen = () => {
         })();
     }, []);
 
+    const saveUsername = async () => {
+        if (!newUsername.trim()) {
+            Alert.alert('Fel', 'Ange ett giltigt namn.');
+            return;
+        }
+        try {
+            // Pass arguments in the correct order
+            await handleSaveName(
+                newUsername,
+                notificationSetting, // Boolean value
+                chatNotificationSetting, // Boolean value
+                setStoredName
+            );
+            Alert.alert('Sparat', 'Ditt namn och inställningar har sparats.');
+        } catch (error) {
+            console.error('Fel vid sparande av namn:', error);
+            Alert.alert('Fel', 'Kunde inte spara ditt namn.');
+        }
+    };
+    const loadTerms = async () => {
+        try {
+            const response = await fetch('https://frontix.se/teamradar/terms.txt');
+            const terms = await response.text();
+           
+            setTermsText(terms);
+        } catch (error) {
+            console.error('Error loading terms:', error);
+        }
+    };
+
+    const showTerms = async () => {
+        await loadTerms();
+        setTermsVisible(true);
+    };
     if (scanning) {
         return (
             <Camera
@@ -63,26 +98,11 @@ const UsernameScreen = () => {
         <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
             {storedName ? (
                 <>
-                    <Text style={tw`text-lg mb-1`}>Välkommen, {storedName || "Gäst" }!</Text>
+                    <Text style={tw`text-lg mb-1`}>Välkommen, {storedName || "Gäst"}!</Text>
                     {team ? (
                         <>
                             <Text style={tw`text-lg mb-2`}>Du är med i team: {teamName}</Text>
-                            <View style={tw`h-1 bg-black my-1`} />
-                            <Text style={tw`text-sm mb-4`}>Hur ofta vill du att din position ska uppdateras?</Text>
-                            <RNPickerSelect
-                                onValueChange={(value) => setUpdateFrequency(value)}
-                                items={[
-                                    { label: 'var 10:e sekund, bästa prestanda', value: 10000 },
-                                    { label: 'varje minut', value: 60000 },
-                                    { label: 'Var 3:e minut', value: 180000 },
-                                    { label: 'var 10:e minut, sparar batteri', value: 600000 },
-                                ]}
-                                style={{
-                                    inputIOS: tw`border border-gray-400 rounded-lg p-1 mb-4 bg-white w-full max-w-md`,
-                                    inputAndroid: tw`border border-gray-400 rounded-lg p-0.1 mb-2 bg-white w-full max-w-md`,
-                                }}
-                                value={updateFrequency}
-                            />
+                            {/* Other team-related UI */}
                             <Text style={tw`text-sm mb-4`}>Just nu är din position {isTracking ? "synlig" : "osynlig"}</Text>
 
                             <TouchableOpacity
@@ -113,11 +133,28 @@ const UsernameScreen = () => {
                                     onValueChange={setChatNotificationSetting}
                                 />
                             </View>
+                            <TouchableOpacity
+                        style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
+                        onPress={() => navigation.navigate("TeamScreen")}
+                    >
+                        <Icon name="group" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Hantera teamet</Text>
+                    </TouchableOpacity>
+                            <TouchableOpacity
+                            
+style={tw`bg-red-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
+onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, setTeamName)}
+>
+<Icon name="restart-alt" size={20} color="white" />
+<Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Reset App, ta bort användare och börja om.</Text>
+</TouchableOpacity>
                         </>
                     ) : (
                         <>
-                            <Text style={tw`text-base mb-4`}>Du är inte med i något team än.</Text>
-                            <Text style={tw`text-sm mb-4`}>Du går med i ett team genom att scanna en QR-kod eller skriva in en kod som du kan få av en som redan är med i teamet du vill gå med i.</Text>
+                            {/* "Gå med i ett team..." text */}
+                            <Text style={tw`text-base mb-4`}>
+                                Du går med i ett team genom att scanna en QR-kod eller skriva in en kod som du kan få av en som redan är med i teamet du vill gå med i.
+                            </Text>
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mb-3 flex-row justify-center items-center`}
                                 onPress={() => setScanning(true)}
@@ -133,134 +170,74 @@ const UsernameScreen = () => {
                                 keyboardType="numeric"
                             />
                             <TouchableOpacity
-                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
+                                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mb-2 flex-row justify-center items-center`}
                                 onPress={() => handleJoinTeamWithCode(teamCodeInput, userId, setTeam, setTeamName, () => startTrackingPosition(inactiveHoursStart, inactiveHoursEnd, updateFrequency))}
                             >
                                 <Icon name="group-add" size={20} color="white" />
                                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Gå med i team med kod</Text>
                             </TouchableOpacity>
+                            {/* "Skapa team" button */}
+                            <TouchableOpacity
+                                style={tw`bg-green-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
+                                onPress={() => navigation.navigate("TeamScreen")}
+                            >
+                                <Icon name="group-add" size={20} color="white" />
+                                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>
+                                    Skapa team
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+style={tw`bg-red-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
+onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, setTeamName)}
+>
+<Icon name="restart-alt" size={20} color="white" />
+<Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Reset App, ta bort användare och börja om.</Text>
+</TouchableOpacity>
+
                         </>
                     )}
                 </>
             ) : (
-                <Text style={tw`text-base mb-4`}>Inget namn sparat än.</Text>
+                <>
+                    <Text style={tw`text-base mb-4`}>Inget namn sparat än.</Text>
+                    <Text style={tw`text-base mb-4`}>Genom att skapa en användare samtycker du till våra regler och villkor.</Text>
+                    <TouchableOpacity onPress={() => showTerms(setTermsVisible, setTermsText)}>
+                        <Text style={tw`text-blue-500 underline mb-4`}>Läs våra regler och villkor</Text>
+                    </TouchableOpacity>
+
+                    <TextInput
+                        style={tw`border border-gray-400 rounded-lg p-2 mb-3 w-full max-w-md`}
+                        placeholder="Ange ditt namn"
+                        value={newUsername}
+                        onChangeText={setNewUsername}
+                    />
+                    <TouchableOpacity
+                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
+                        onPress={saveUsername}
+                    >
+                        <Icon name="save" size={20} color="white" />
+                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>
+                            Spara namn
+                        </Text>
+                    </TouchableOpacity>
+                </>
             )}
-            {team ? (
-                <View style={tw`mt-3 w-full items-center`}>
-                    <TouchableOpacity
-                        style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center mb-3`}
-                        onPress={() => {
-                            const currentTime = new Date();
-                            const currentHour = currentTime.getHours();
-
-                            // Get inactive hours from the team
-                            const inactiveHoursStart = team?.inactiveHours?.start || 0;
-                            const inactiveHoursEnd = team?.inactiveHours?.end || 0;
-                            console.log("Inactive hours:", inactiveHoursStart, inactiveHoursEnd);
-                            
-                            // Check if the team is expired
-                            if (team.expiryDate && new Date(team.expiryDate) < currentTime) {
-                                Alert.alert(
-                                    "Teamet inte giltigt längre",
-                                    "En administratör behöver ändra utgångsdatum."
-                                );
-                                return;
-                            }
-
-                            // Check if the current time is within inactive hours
-                            if (
-                                inactiveHoursStart !== undefined &&
-                                inactiveHoursEnd !== undefined &&
-                                ((inactiveHoursStart < inactiveHoursEnd &&
-                                    currentHour >= inactiveHoursStart &&
-                                    currentHour < inactiveHoursEnd) ||
-                                    (inactiveHoursStart > inactiveHoursEnd &&
-                                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd)))
-                            ) {
-                                Alert.alert(
-                                    "Teamet är i nattläge",
-                                    "Kartan är inte aktiv just nu."
-                                );
-                                return;
-                            }
-
-                            // Navigate to the map if all conditions are met
-                            navigation.navigate("MapScreen");
-                        }}
-                    >
-                        <Icon name="map" size={20} color="white" />
-                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Visa Karta</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={tw`bg-green-500 p-2 rounded-lg shadow-md w-full max-w-md flex-row justify-center items-center`}
-                        onPress={() => navigation.navigate("TeamScreen")}
-                    >
-                        <Icon name="group" size={20} color="white" />
-                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Hantera teamet</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={tw`mt-3`}>
-                    <Text style={tw`text-base mb-4`}>Gå med i ett team för att kunna se kartan. Du kan också skapa ett team om du inte har något att gå med i.</Text>
-                    <TouchableOpacity
-                        style={tw`bg-green-500 p-2 rounded-lg shadow-md flex-row justify-center items-center`}
-                        onPress={() => navigation.navigate("TeamScreen")}
-                    >
-                        <Icon name="group-add" size={20} color="white" />
-                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa team</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-            <TouchableOpacity
-                style={tw`bg-red-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
-                onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, setTeamName)}
-            >
-                <Icon name="restart-alt" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Reset App, ta bort användare och börja om.</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
-                onPress={() => setAboutVisible(true)}
-            >
-                <Icon name="info" size={20} color="white" />
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Om TeamRadar</Text>
-            </TouchableOpacity>
-
-            <Modal
+             <Modal
                 visible={termsVisible}
                 animationType="slide"
                 onRequestClose={() => setTermsVisible(false)}
             >
                 <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
                     <ScrollView style={tw`w-full max-w-md`}>
-                        <Text style={tw`text-sm`}>{termsText}</Text>
+                        <Text style={tw`text-lg`}>{termsText}</Text>
                     </ScrollView>
                     <Button title="Stäng" onPress={() => setTermsVisible(false)} />
                 </View>
             </Modal>
-
-            <Modal
-                visible={aboutVisible}
-                animationType="slide"
-                onRequestClose={() => setAboutVisible(false)}
-            >
-                <View style={tw`flex-1 justify-center items-center bg-gray-100`}>
-                    <Image
-                        source={require('../../assets/splash.png')}
-                        style={tw`w-full h-full`}
-                        resizeMode="contain"
-                    />
-                    <TouchableOpacity
-                        style={tw`bg-blue-500 p-2 rounded-lg shadow-md flex-row justify-center items-center mt-4`}
-                        onPress={() => setAboutVisible(false)}
-                    >
-                        <Icon name="close" size={20} color="white" />
-                        <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Stäng</Text>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
         </View>
     );
+    
 };
+
 
 export default UsernameScreen;

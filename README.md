@@ -221,6 +221,8 @@ if team expiry date has passed, don't show the button to the map or the chat, re
 
 in the team setting sscreen add toggle boxes for the new fields and a text before them on the same line. Like "Aktivera ekonomifunktioner", "aktivera kudos och grönt kort" och "aktivera nödknapp". 
 
+gå med i ett team...-texten ska bara synas om man har username sparat och inte tillhör ett team. 2. Skapa team-knappen ska bara synas om man har ett username sparat och inte tillhör ett team. 3. efter Inget namn sparat än om man inte har ett namn sparat ska det finnas ett inputfält där man skriver in sitt namn och sen ska det sparas, sen ska sidan laddas om.
+
 BUILD
 
 expo prebuild
@@ -365,3 +367,19 @@ eas secrets:set FIREBASE_APP_ID="your-firebase-app-id"
     utforskare för aab arkiv
 
     testning-> intern testningn, knapp längst till höger-> skapa ny version
+INSTR
+1.  ändra version i app.json
+2. commit till git
+3.  eas build --platform android --profile production
+4. ladda ner filen , vtrl+click, open
+5. flytta till teamradar builds mappen
+6. Öpppna play console, välj apppen->vänstermeny, testa och lansera-> Testar -> intert test 
+7. Längst upp till höger: skapa ny version
+8. ladda upp aab.arkiv
+8. tryck nästa
+8. spara och publicera
+9 . spara och publicera
+10. flik testare, kopiera länk
+11. sicka länk och ladda ner.
+
+12. fel i versionen, set username finns inte kvar i username screen längre så man kan inte skapa team baserat på användare som inte finns,
