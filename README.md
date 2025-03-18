@@ -359,3 +359,9 @@ eas secrets:set FIREBASE_APP_ID="your-firebase-app-id"
     npm install dotenv
 
     skapat en app.config.js
+
+    ny version i play console
+    välj appen 
+    utforskare för aab arkiv
+
+    testning-> intern testningn, knapp längst till höger-> skapa ny version
