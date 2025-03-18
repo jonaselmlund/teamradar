@@ -3,7 +3,74 @@ import { db } from "../firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { fetchMembers, toggleAdminStatus, createTestUser, removeUserFromTeam } from './memberUtils';
-import { startTrackingPosition } from '../utils/locationUtils'; // Import the function
+import { Alert } from "react-native";
+
+let locationWatcher = null;
+
+export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd, updateFrequency = 60000) => {
+    try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission to access location was denied');
+            return;
+        }
+
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+            console.log('Ingen userId hittad i local storage');
+            return;
+        }
+
+        const userRef = doc(db, 'users', userId);
+
+        // Watch the user's position continuously
+        locationWatcher = await Location.watchPositionAsync(
+            {
+                accuracy: Location.Accuracy.High,
+                timeInterval: updateFrequency, // Minimum time interval between updates
+                distanceInterval: 10, // Minimum distance (in meters) between updates
+            },
+            async (location) => {
+                const currentHour = new Date().getHours();
+
+                // Check if the current time is within inactive hours
+                if (
+                    (inactiveHoursStart < inactiveHoursEnd &&
+                        currentHour >= inactiveHoursStart &&
+                        currentHour < inactiveHoursEnd) ||
+                    (inactiveHoursStart > inactiveHoursEnd &&
+                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd))
+                ) {
+                    console.log('Inactive hours, not updating position');
+                    return;
+                }
+
+                // Update the user's position in Firestore
+                await updateDoc(userRef, {
+                    location: {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        timestamp: location.timestamp,
+                    },
+                });
+
+                console.log('Position updated:', location);
+            }
+        );
+
+        console.log('Started tracking position');
+    } catch (error) {
+        console.error('Error starting position tracking:', error);
+    }
+};
+
+export const stopTrackingPosition = () => {
+    if (locationWatcher) {
+        locationWatcher.remove(); // Unsubscribe from the location watcher
+        locationWatcher = null;
+        console.log('Stopped tracking position');
+    }
+};
 
 export const fetchUserData = async (setUser) => {
     try {
@@ -157,35 +224,6 @@ export const deleteTeam = async (team, user, setTeam, setMembers) => {
     }
 };
 
-export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd) => {
-    const updatePosition = async () => {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission to access location was denied');
-            return;
-        }
-
-        const location = await Location.getCurrentPositionAsync({});
-        const currentHour = new Date().getHours();
-
-        if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
-            console.log('Inactive hours, not updating position.');
-            return;
-        }
-
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-            const userRef = doc(db, 'users', userId);
-            await updateDoc(userRef, {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude
-            });
-        }
-    };
-
-    setInterval(updatePosition, 60000); // Default to 1 minute
-};
-
 export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
     try {
         const storedUserId = await AsyncStorage.getItem('userId');
@@ -225,40 +263,21 @@ export const updateTeamSettings = async (teamId, settings) => {
     }
 };
 
-export const removeUserFromTeam = async (user, setTeam, setMembers) => {
+export const toggleTracking = async (isTracking, setIsTracking, inactiveHoursStart, inactiveHoursEnd, updateFrequency) => {
     try {
-        if (!user || !user.teamId) {
-            alert("Ingen giltig användare eller team.");
-            return;
+        if (isTracking) {
+            // Stop tracking
+            stopTrackingPosition();
+            setIsTracking(false);
+            console.log('Position tracking stopped.');
+        } else {
+            // Start tracking
+            await startTrackingPosition(inactiveHoursStart, inactiveHoursEnd, updateFrequency);
+            setIsTracking(true);
+            console.log('Position tracking started.');
         }
-
-        const teamId = user.teamId;
-
-        // Remove the user from the team members collection
-        const memberQuery = query(
-            collection(db, "teams", teamId, "members"),
-            where("userId", "==", user.userId)
-        );
-        const memberSnapshot = await getDocs(memberQuery);
-        memberSnapshot.forEach(async (doc) => {
-            await deleteDoc(doc.ref);
-        });
-
-        // Update the user's teamId to null
-        await updateDoc(doc(db, "users", user.userId), {
-            teamId: null,
-            isAdmin: false,
-        });
-
-        // Clear the team and members state
-        setTeam(null);
-        setMembers([]);
-
-        // Stop tracking the user's position
-        stopTrackingPosition();
-
-        alert("Du har lämnat teamet.");
     } catch (error) {
-        console.error("Fel vid borttagning från team:", error);
+        console.error('Error toggling tracking:', error);
+        Alert.alert('Error', 'Kunde inte ändra spårningsstatus.');
     }
 };

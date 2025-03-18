@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, query, w
 import uuid from 'react-native-uuid';
 import * as Location from 'expo-location';
 import { Alert } from 'react-native';
+import { startTrackingPosition, toggleTracking } from "./teamUtils"; // Import from teamUtils.js
 
 export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
     try {
@@ -89,7 +90,7 @@ export const handleResetApp = async (setStoredName, setUsername, setUserId, setT
     }
 };
 
-export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, setTeamName, startTrackingPosition) => {
+export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, setTeamName) => {
     if (!teamCodeInput.trim()) {
         alert("Ange en team-kod!");
         return;
@@ -117,7 +118,7 @@ export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, set
             // Update the user's document with the teamId and isAdmin fields
             await updateDoc(doc(db, "users", userId), {
                 teamId: teamId,
-                isAdmin: false
+                isAdmin: false,
             });
 
             // Add the user to the team's members collection
@@ -127,13 +128,19 @@ export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, set
             await addDoc(collection(db, "teams", teamId, "members"), {
                 userId: userId,
                 username: username,
-                isAdmin: false
+                isAdmin: false,
             });
 
             alert("Gick med i teamet!");
             if (setTeam) setTeam(teamId);
             if (setTeamName) setTeamName(teamDoc.data().name);
-            if (startTrackingPosition) startTrackingPosition();
+
+            // Start tracking the user's position
+            startTrackingPosition(
+                teamDoc.data().inactiveHours.start,
+                teamDoc.data().inactiveHours.end,
+                60000 // Example: Update every 60 seconds
+            );
         } else {
             alert("Team-koden är ogiltig!");
         }
@@ -142,8 +149,7 @@ export const handleJoinTeamWithCode = async (teamCodeInput, userId, setTeam, set
     }
 };
 
-export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setTeamName, startTrackingPosition) => {
-    console.log(`PLACE !`);
+export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setTeamName) => {
     try {
         console.log(`Scanned barcode of type ${type} with data: ${data}`);
         const teamDoc = await getDoc(doc(db, "teams", data));
@@ -159,7 +165,16 @@ export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setT
             alert("Gick med i teamet!");
             setTeam(data);
             setTeamName(teamDoc.data().name);
-            startTrackingPosition();
+
+            // Ensure inactiveHours exist in the team data
+            const inactiveHours = teamDoc.data().inactiveHours || { start: 0, end: 0 };
+
+            // Start tracking the user's position
+            startTrackingPosition(
+                inactiveHours.start,
+                inactiveHours.end,
+                60000 // Example: Update every 60 seconds
+            );
         } else {
             alert("Team-koden är ogiltig!");
         }
@@ -168,61 +183,3 @@ export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setT
         alert("Något gick fel vid anslutning till teamet.");
     }
 };
-
-export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd, updateFrequency) => {
-    try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission to access location was denied');
-            return;
-        }
-
-        const userId = await AsyncStorage.getItem('userId');
-        if (!userId) {
-            console.log('Ingen userId hittad i local storage');
-            return;
-        }
-
-        const userRef = doc(db, 'users', userId);
-
-        // Watch the user's position continuously
-        Location.watchPositionAsync(
-            {
-                accuracy: Location.Accuracy.High,
-                timeInterval: updateFrequency, // Minimum time interval between updates
-                distanceInterval: 10, // Minimum distance (in meters) between updates
-            },
-            async (location) => {
-                const currentHour = new Date().getHours();
-
-                // Check if the current time is within inactive hours
-                if (
-                    (inactiveHoursStart < inactiveHoursEnd &&
-                        currentHour >= inactiveHoursStart &&
-                        currentHour < inactiveHoursEnd) ||
-                    (inactiveHoursStart > inactiveHoursEnd &&
-                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd))
-                ) {
-                    console.log('Inactive hours, not updating position');
-                    return;
-                }
-
-                // Update the user's position in Firestore
-                await updateDoc(userRef, {
-                    location: {
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
-                        timestamp: location.timestamp,
-                    },
-                });
-
-                console.log('Position updated:', location);
-            }
-        );
-
-        console.log('Started tracking position');
-    } catch (error) {
-        console.error('Error starting position tracking:', error);
-    }
-};
-

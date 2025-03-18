@@ -92,6 +92,12 @@ export const removeUserFromTeam = async (teamId, userId) => {
             await deleteDoc(doc.ref);
         });
 
+        
+                // Stop tracking the user's position
+                stopTrackingPosition();
+        
+                alert("Du har lämnat teamet.");
+
         console.log(`User ${userId} removed from team ${teamId}`);
     } catch (error) {
         console.error('Error removing user from team:', error);

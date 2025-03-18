@@ -3,5 +3,12 @@ app.json
 eas.json
 README.md
 
+*.env
+
 android/local.properties
 
+build/
+dist/
+
+.expo/
+.expo-shared/

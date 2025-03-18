@@ -5,8 +5,9 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera'; 
 import RNPickerSelect from 'react-native-picker-select';
-import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned, startTrackingPosition, toggleTracking, showTerms } from '../utils/handleName';
+import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned, showTerms } from '../utils/handleName';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { startTrackingPosition, toggleTracking } from '../utils/teamUtils';
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -86,7 +87,11 @@ const UsernameScreen = () => {
 
                             <TouchableOpacity
                                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mb-3 flex-row justify-center items-center`}
-                                onPress={() => toggleTracking(isTracking, setIsTracking, inactiveHoursStart, inactiveHoursEnd, updateFrequency)}
+                                onPress={() => {
+                                    const inactiveHoursStart = team?.inactiveHours?.start || 0; // Default to 0 if not set
+                                    const inactiveHoursEnd = team?.inactiveHours?.end || 0;   // Default to 0 if not set
+                                    toggleTracking(isTracking, setIsTracking, inactiveHoursStart, inactiveHoursEnd, updateFrequency);
+                                }}
                             >
                                 <Icon name={isTracking ? "visibility-off" : "visibility"} size={20} color="white" />
                                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>
@@ -151,7 +156,8 @@ const UsernameScreen = () => {
                             // Get inactive hours from the team
                             const inactiveHoursStart = team?.inactiveHours?.start || 0;
                             const inactiveHoursEnd = team?.inactiveHours?.end || 0;
-
+                            console.log("Inactive hours:", inactiveHoursStart, inactiveHoursEnd);
+                            
                             // Check if the team is expired
                             if (team.expiryDate && new Date(team.expiryDate) < currentTime) {
                                 Alert.alert(

@@ -225,3 +225,137 @@ BUILD
 
 expo prebuild
 eas build --platform android --profile production
+
+
+start tracking pos code: 
+
+export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd, updateFrequency) => {
+    try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission to access location was denied');
+            return;
+        }
+
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+            console.log('Ingen userId hittad i local storage');
+            return;
+        }
+
+        const userRef = doc(db, 'users', userId);
+
+        // Watch the user's position continuously
+        Location.watchPositionAsync(
+            {
+                accuracy: Location.Accuracy.High,
+                timeInterval: updateFrequency, // Minimum time interval between updates
+                distanceInterval: 10, // Minimum distance (in meters) between updates
+            },
+            async (location) => {
+                const currentHour = new Date().getHours();
+
+                // Check if the current time is within inactive hours
+                if (
+                    (inactiveHoursStart < inactiveHoursEnd &&
+                        currentHour >= inactiveHoursStart &&
+                        currentHour < inactiveHoursEnd) ||
+                    (inactiveHoursStart > inactiveHoursEnd &&
+                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd))
+                ) {
+                    console.log('Inactive hours, not updating position');
+                    return;
+                }
+
+                // Update the user's position in Firestore
+                await updateDoc(userRef, {
+                    location: {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        timestamp: location.timestamp,
+                    },
+                });
+
+                console.log('Position updated:', location);
+            }
+        );
+
+        console.log('Started tracking position');
+    } catch (error) {
+        console.error('Error starting position tracking:', error);
+    }
+};
+
+removeuserfrom team from teamutils
+export const removeUserFromTeam = async (user, setTeam, setMembers) => {
+    try {
+        if (!user || !user.teamId) {
+            alert("Ingen giltig användare eller team.");
+            return;
+        }
+
+        const teamId = user.teamId;
+
+        // Remove the user from the team members collection
+        const memberQuery = query(
+            collection(db, "teams", teamId, "members"),
+            where("userId", "==", user.userId)
+        );
+        const memberSnapshot = await getDocs(memberQuery);
+        memberSnapshot.forEach(async (doc) => {
+            await deleteDoc(doc.ref);
+        });
+
+        // Update the user's teamId to null
+        await updateDoc(doc(db, "users", user.userId), {
+            teamId: null,
+            isAdmin: false,
+        });
+
+        // Clear the team and members state
+        setTeam(null);
+        setMembers([]);
+
+        // Stop tracking the user's position
+        stopTrackingPosition();
+
+        alert("Du har lämnat teamet.");
+    } catch (error) {
+        console.error("Fel vid borttagning från team:", error);
+    }
+};
+
+debug om kracsh
+adb logcat, ladda ner android dev sdk och sätt path
+enable usb debugging
+adb logcat findstr com.teamradar
+
+adb *:E hittar felet
+BUGGFIX
+
+ENVIRONEMENT VARIABLES
+
+npm install expo-env
+npm install -g eas-cli
+
+eas secrets:set FIREBASE_API_KEY="AIzaSyD7vhdeLqD2iLDmQ56bxE1nzH9C3NTJstE"
+eas secrets:set FIREBASE_AUTH_DOMAIN: "teamradar-c118e.firebaseapp.com"
+eas secrets:set FIREBASE_PROJECT_ID: "teamradar-c118e"
+
+eas secrets:set FIREBASE_STORAGE_BUCKET="teamradar-c118e.firebasestorage.app"
+eas secrets:set FIREBASE_MESSAGING_SENDER_ID="293037580610"
+eas secrets:set FIREBASE_APP_ID="your-firebase-app-id"
+
+
+    apiKey: Constants.expoConfig.extra.FIREBASE_API_KEY,
+    authDomain: Constants.expoConfig.extra.FIREBASE_AUTH_DOMAIN,
+    projectId: Constants.expoConfig.extra.FIREBASE_PROJECT_ID,
+    storageBucket: "teamradar-c118e.firebasestorage.app",
+    messagingSenderId: "293037580610",
+    appId: "1:293037580610:web:7dc37a0aed470e0c6068db"
+
+    how to reach: expo dev, builds-> configuration ->environemnt variables->
+    
+    npm install dotenv
+
+    skapat en app.config.js
