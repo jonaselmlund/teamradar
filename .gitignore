@@ -4,6 +4,7 @@ eas.json
 README.md
 
 *.env
+.env
 
 android/local.properties
 
