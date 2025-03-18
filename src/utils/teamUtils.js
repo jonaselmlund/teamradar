@@ -3,6 +3,7 @@ import { db } from "../firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { fetchMembers, toggleAdminStatus, createTestUser, removeUserFromTeam } from './memberUtils';
+import { startTrackingPosition } from '../utils/locationUtils'; // Import the function
 
 export const fetchUserData = async (setUser) => {
     try {
@@ -56,7 +57,10 @@ export const createTeam = async (teamName, inactiveHoursStart, inactiveHoursEnd,
             expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +7 dagar
             maxMembers: 12,
             inactiveHours: { start: inactiveHoursStart, end: inactiveHoursEnd },
-            teamCode: teamCode
+            teamCode: teamCode,
+            kudosFunctionalityEnabled: false, // Default to false
+            teamEconomyEnabled: false, // Default to false
+            emergencyButtonEnabled: false, // Default to false
         });
 
         await updateDoc(doc(db, "users", user.userId), {
@@ -72,43 +76,52 @@ export const createTeam = async (teamName, inactiveHoursStart, inactiveHoursEnd,
 
         alert("Team skapat!");
         setTeamName(""); // Töm inputfältet
-        setTeam({ id: teamRef.id, name: teamName, inactiveHours: { start: inactiveHoursStart, end: inactiveHoursEnd }, teamCode });
+        setTeam({
+            id: teamRef.id,
+            name: teamName,
+            inactiveHours: { start: inactiveHoursStart, end: inactiveHoursEnd },
+            teamCode,
+            kudosFunctionalityEnabled: false,
+            teamEconomyEnabled: false,
+            emergencyButtonEnabled: false,
+        });
+
+        // Start tracking the user's position
+        startTrackingPosition(inactiveHoursStart, inactiveHoursEnd, 60000); // Example: Update every 60 seconds
     } catch (error) {
         console.error("Fel vid skapande av team:", error);
     }
 };
 
-export const joinTeam = async (teamCode, user, fetchTeamData, startTrackingPosition) => {
-    if (!teamCode.trim()) {
-        alert("Ange en team-kod!");
-        return;
-    }
-
-    if (!user) {
-        alert("Ingen giltig användare.");
-        return;
-    }
-
+export const joinTeam = async (teamCode, user, setTeam, setTeamName) => {
     try {
-        const teamDoc = await getDoc(doc(db, "teams", teamCode));
-        if (teamDoc.exists()) {
-            await updateDoc(doc(db, "users", user.userId), {
-                teamId: teamCode,
-                isAdmin: false
-            });
+        const teamQuery = query(collection(db, "teams"), where("teamCode", "==", teamCode));
+        const teamSnapshot = await getDocs(teamQuery);
 
-            await addDoc(collection(db, "teams", teamCode, "members"), {
-                userId: user.userId,
-                username: user.username,
-                isAdmin: false
-            });
-
-            alert("Gick med i teamet!");
-            fetchTeamData(teamCode);
-            startTrackingPosition();
-        } else {
-            alert("Team-koden är ogiltig!");
+        if (teamSnapshot.empty) {
+            alert("Team med denna kod hittades inte.");
+            return;
         }
+
+        const teamDoc = teamSnapshot.docs[0];
+        const teamData = teamDoc.data();
+
+        await updateDoc(doc(db, "users", user.userId), {
+            teamId: teamDoc.id,
+        });
+
+        await addDoc(collection(db, "teams", teamDoc.id, "members"), {
+            userId: user.userId,
+            username: user.username,
+            isAdmin: false,
+        });
+
+        alert("Du har gått med i teamet!");
+        setTeam(teamData);
+        setTeamName(teamData.name);
+
+        // Start tracking the user's position
+        startTrackingPosition(teamData.inactiveHours.start, teamData.inactiveHours.end, 60000); // Example: Update every 60 seconds
     } catch (error) {
         console.error("Fel vid anslutning till team:", error);
     }
@@ -204,5 +217,48 @@ export const updateTeamName = async (teamId, name) => {
 
 export const updateTeamSettings = async (teamId, settings) => {
     const teamRef = doc(db, 'teams', teamId);
-    await updateDoc(teamRef, settings);
+    try {
+        await updateDoc(teamRef, settings);
+        console.log("Team settings updated:", settings);
+    } catch (error) {
+        console.error("Error updating team settings:", error);
+    }
+};
+
+export const removeUserFromTeam = async (user, setTeam, setMembers) => {
+    try {
+        if (!user || !user.teamId) {
+            alert("Ingen giltig användare eller team.");
+            return;
+        }
+
+        const teamId = user.teamId;
+
+        // Remove the user from the team members collection
+        const memberQuery = query(
+            collection(db, "teams", teamId, "members"),
+            where("userId", "==", user.userId)
+        );
+        const memberSnapshot = await getDocs(memberQuery);
+        memberSnapshot.forEach(async (doc) => {
+            await deleteDoc(doc.ref);
+        });
+
+        // Update the user's teamId to null
+        await updateDoc(doc(db, "users", user.userId), {
+            teamId: null,
+            isAdmin: false,
+        });
+
+        // Clear the team and members state
+        setTeam(null);
+        setMembers([]);
+
+        // Stop tracking the user's position
+        stopTrackingPosition();
+
+        alert("Du har lämnat teamet.");
+    } catch (error) {
+        console.error("Fel vid borttagning från team:", error);
+    }
 };

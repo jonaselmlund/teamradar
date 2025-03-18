@@ -5,26 +5,23 @@ import tw from 'twrnc';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const ExtraFunctionsScreen = ({ route }) => {
-    const { teamMembers = [] } = route.params; // Default to an empty array if teamMembers is undefined
+    const { teamMembers = [], teamEconomyEnabled = false } = route.params; // Default values
     const [groups, setGroups] = useState([]);
     const navigation = useNavigation();
 
     const pickRandomMember = () => {
-        console.log('Antal medlemmar:', teamMembers.length);
         if (teamMembers.length === 0) {
             Alert.alert('Inga teammedlemmar', 'Det finns inga teammedlemmar att välja bland.');
             return;
         }
         const randomIndex = Math.floor(Math.random() * teamMembers.length);
-        console.log('randomIndex:', randomIndex);
         const member = teamMembers[randomIndex];
-        console.log('Utvald medlem:', teamMembers[randomIndex].username);
         Alert.alert('Utvald medlem', `Vald medlem blev: ${member.username}`);
     };
 
     const createGroups = (numGroups) => {
         if (teamMembers.length === 0) {
-            Alert.alert('Inga medlemmar', 'DEt finns inga medlemmar att skapa grupper av.');
+            Alert.alert('Inga medlemmar', 'Det finns inga medlemmar att skapa grupper av.');
             return;
         }
         const shuffledMembers = [...teamMembers].sort(() => 0.5 - Math.random());
@@ -45,9 +42,9 @@ const ExtraFunctionsScreen = ({ route }) => {
                 style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
                 onPress={pickRandomMember}
             >
-                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Völj en slumpmässig teammedlem</Text>
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Välj en slumpmässig teammedlem</Text>
             </TouchableOpacity>
-            
+
             {teamMembers.length > 2 && (
                 <TouchableOpacity
                     style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
@@ -84,6 +81,17 @@ const ExtraFunctionsScreen = ({ route }) => {
                         </View>
                     ))}
                 </View>
+            )}
+
+            {/* Button for Team Economy */}
+            {teamEconomyEnabled && (
+                <TouchableOpacity
+                    style={tw`bg-green-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
+                    onPress={() => navigation.navigate('EconomyScreen')}
+                >
+                    <Icon name="attach-money" size={20} color="white" />
+                    <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Gå till team-ekonomi</Text>
+                </TouchableOpacity>
             )}
         </View>
     );

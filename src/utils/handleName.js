@@ -170,18 +170,10 @@ export const handleBarCodeScanned = async ({ type, data }, userId, setTeam, setT
 };
 
 export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd, updateFrequency) => {
-    const updatePosition = async () => {
+    try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
             Alert.alert('Permission to access location was denied');
-            return;
-        }
-
-        const location = await Location.getCurrentPositionAsync({});
-        const currentHour = new Date().getHours();
-
-        if (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd) {
-            console.log('Inactive hours, not updating position');
             return;
         }
 
@@ -192,18 +184,45 @@ export const startTrackingPosition = async (inactiveHoursStart, inactiveHoursEnd
         }
 
         const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, {
-            location: {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                timestamp: location.timestamp
+
+        // Watch the user's position continuously
+        Location.watchPositionAsync(
+            {
+                accuracy: Location.Accuracy.High,
+                timeInterval: updateFrequency, // Minimum time interval between updates
+                distanceInterval: 10, // Minimum distance (in meters) between updates
+            },
+            async (location) => {
+                const currentHour = new Date().getHours();
+
+                // Check if the current time is within inactive hours
+                if (
+                    (inactiveHoursStart < inactiveHoursEnd &&
+                        currentHour >= inactiveHoursStart &&
+                        currentHour < inactiveHoursEnd) ||
+                    (inactiveHoursStart > inactiveHoursEnd &&
+                        (currentHour >= inactiveHoursStart || currentHour < inactiveHoursEnd))
+                ) {
+                    console.log('Inactive hours, not updating position');
+                    return;
+                }
+
+                // Update the user's position in Firestore
+                await updateDoc(userRef, {
+                    location: {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        timestamp: location.timestamp,
+                    },
+                });
+
+                console.log('Position updated:', location);
             }
-        });
+        );
 
-        console.log('Position updated:', location);
-    };
-
-    updatePosition();
-    setInterval(updatePosition, updateFrequency);
+        console.log('Started tracking position');
+    } catch (error) {
+        console.error('Error starting position tracking:', error);
+    }
 };
 

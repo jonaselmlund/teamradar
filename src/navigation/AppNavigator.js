@@ -7,6 +7,7 @@ import TeamScreen from '../screens/TeamScreen';
 import UsernameScreen from '../screens/UsernameScreen';
 import ExtraFunctionsScreen from '../screens/ExtraFunctionsScreen';
 import UserSettingsScreen from '../screens/UserSettingsScreen'; // Add this import
+import ExtraFunctionsScreen from './src/screens/ExtraFunctionsScreen';
 
 const Stack = createStackNavigator();
 
@@ -20,6 +21,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Team" component={TeamScreen} />
             <Stack.Screen name="ExtraFunctionsScreen" component={ExtraFunctionsScreen} />
             <Stack.Screen name="UserSettings" component={UserSettingsScreen} />
+            <Stack.Screen name="EconomyScreen" component={EconomyScreen} />
         </Stack.Navigator>
     );
 };

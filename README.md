@@ -219,7 +219,7 @@ lägg till knappar där man kan "dela upp teamet i två och två" och "dela upp 
 
 if team expiry date has passed, don't show the button to the map or the chat, replace it with an alert that the "Teamets giltighetstid har passerat, ändra i teaminstälningar" In team settings screen, display expiry date and a setting to extend with 3 days if pressed.
 
-
+in the team setting sscreen add toggle boxes for the new fields and a text before them on the same line. Like "Aktivera ekonomifunktioner", "aktivera kudos och grönt kort" och "aktivera nödknapp". 
 
 BUILD
 

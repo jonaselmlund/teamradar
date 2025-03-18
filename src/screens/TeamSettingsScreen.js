@@ -15,6 +15,9 @@ const TeamSettingsScreen = ({ route }) => {
     const [inactiveHoursEnd, setInactiveHoursEnd] = useState(7);
     const [isLockedForNewMembers, setIsLockedForNewMembers] = useState(false);
     const [informationText, setInformationText] = useState('');
+    const [teamEconomyEnabled, setTeamEconomyEnabled] = useState(false);
+    const [kudosFunctionalityEnabled, setKudosFunctionalityEnabled] = useState(false);
+    const [emergencyButtonEnabled, setEmergencyButtonEnabled] = useState(false);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -30,6 +33,9 @@ const TeamSettingsScreen = ({ route }) => {
                 setInactiveHoursEnd(teamData.inactiveHours.end);
                 setIsLockedForNewMembers(teamData.isLockedForNewMembers || false);
                 setInformationText(teamData.informationText || '');
+                setTeamEconomyEnabled(teamData.teamEconomyEnabled || false);
+                setKudosFunctionalityEnabled(teamData.kudosFunctionalityEnabled || false);
+                setEmergencyButtonEnabled(teamData.emergencyButtonEnabled || false);
             }
         };
 
@@ -46,7 +52,10 @@ const TeamSettingsScreen = ({ route }) => {
                     end: parseInt(inactiveHoursEnd) || 0
                 },
                 isLockedForNewMembers: !!isLockedForNewMembers,
-                informationText: informationText || ''
+                informationText: informationText || '',
+                teamEconomyEnabled: !!teamEconomyEnabled,
+                kudosFunctionalityEnabled: !!kudosFunctionalityEnabled,
+                emergencyButtonEnabled: !!emergencyButtonEnabled,
             };
             await updateDoc(doc(db, 'teams', teamId), updatedSettings);
             Alert.alert('Allt gick bra', 'Teaminställningar sparade.');
@@ -138,11 +147,32 @@ const TeamSettingsScreen = ({ route }) => {
                 numberOfLines={5}
                 textAlignVertical="top"
             />
-            <View style={tw`flex-row justify-between items-center mb-1`}>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
                 <Text style={tw`text-sm`}>Ska laget vara låst för nya medlemmar?</Text>
                 <Switch
                     value={isLockedForNewMembers}
                     onValueChange={setIsLockedForNewMembers}
+                />
+            </View>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-sm`}>Aktivera ekonomifunktioner</Text>
+                <Switch
+                    value={teamEconomyEnabled}
+                    onValueChange={setTeamEconomyEnabled}
+                />
+            </View>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-sm`}>Aktivera kudos och grönt kort</Text>
+                <Switch
+                    value={kudosFunctionalityEnabled}
+                    onValueChange={setKudosFunctionalityEnabled}
+                />
+            </View>
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-sm`}>Aktivera nödknapp</Text>
+                <Switch
+                    value={emergencyButtonEnabled}
+                    onValueChange={setEmergencyButtonEnabled}
                 />
             </View>
             <TouchableOpacity
