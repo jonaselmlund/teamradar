@@ -26,7 +26,10 @@ const TeamSettingsScreen = ({ route }) => {
             const teamDoc = await getDoc(teamRef);
             if (teamDoc.exists()) {
                 const teamData = teamDoc.data();
-                setTeam(teamData);
+                setTeam({
+                    ...teamData,
+                    expiryDate: teamData.expiryDate?.toDate ? teamData.expiryDate.toDate() : null, // Konvertera Firestore Timestamp
+                });
                 setTeamName(teamData.name);
                 setMaxMembers(teamData.maxMembers.toString());
                 setInactiveHoursStart(teamData.inactiveHours.start);
