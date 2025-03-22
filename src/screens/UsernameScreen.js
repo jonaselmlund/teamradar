@@ -8,6 +8,8 @@ import RNPickerSelect from 'react-native-picker-select';
 import { fetchUsernameFromFirestore, handleSaveName, handleResetApp, handleJoinTeamWithCode, handleBarCodeScanned, showTerms } from '../utils/handleName';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { startTrackingPosition, toggleTracking } from '../utils/teamUtils';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Add this import
+import { db } from '../firebaseConfig'; // Ensure you have the Firebase config imported
 
 const UsernameScreen = () => {
     const [username, setUsername] = useState('');
@@ -26,6 +28,7 @@ const UsernameScreen = () => {
     const [termsText, setTermsText] = useState('');
     const [aboutVisible, setAboutVisible] = useState(false);
     const [newUsername, setNewUsername] = useState('');
+    const [testResult, setTestResult] = useState(''); // State to store test results
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -84,6 +87,33 @@ const UsernameScreen = () => {
     const showTerms = async () => {
         await loadTerms();
         setTermsVisible(true);
+    };
+    const testConnections = async () => {
+        try {
+            // Test AsyncStorage
+            const testKey = 'testKey';
+            const testValue = 'testValue';
+            await AsyncStorage.setItem(testKey, testValue);
+            const retrievedValue = await AsyncStorage.getItem(testKey);
+
+            if (retrievedValue !== testValue) {
+                throw new Error('AsyncStorage test failed');
+            }
+
+            // Test Firebase connection
+            const testDocRef = doc(db, 'testCollection', 'testDocument');
+            await setDoc(testDocRef, { testField: 'testValue' });
+            const testDoc = await getDoc(testDocRef);
+
+            if (!testDoc.exists() || testDoc.data().testField !== 'testValue') {
+                throw new Error('Firebase test failed');
+            }
+
+            setTestResult('AsyncStorage and Firebase connection are working correctly.');
+        } catch (error) {
+            console.error('Test failed:', error);
+            setTestResult(`Test failed: ${error.message}`);
+        }
     };
     if (scanning) {
         return (
@@ -223,17 +253,34 @@ onPress={() => handleResetApp(setStoredName, setUsername, setUserId, setTeam, se
                 </>
             )}
              <Modal
-                visible={termsVisible}
-                animationType="slide"
-                onRequestClose={() => setTermsVisible(false)}
+    visible={termsVisible}
+    animationType="slide"
+    onRequestClose={() => setTermsVisible(false)}
+>
+    <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
+        <View style={tw`w-full max-w-md max-h-3/4`}> 
+            <ScrollView style={tw`w-full`} showsVerticalScrollIndicator={true}>
+                <Text style={tw`text-lg`}>{termsText}</Text>
+            </ScrollView>
+        </View>
+        <Button title="Stäng" onPress={() => setTermsVisible(false)} />
+    </View>
+</Modal>        
+            {/* Button to test AsyncStorage and Firebase */}
+            <TouchableOpacity
+                style={tw`bg-blue-500 p-2 rounded-lg shadow-md w-full max-w-md mt-3 flex-row justify-center items-center`}
+                onPress={testConnections}
             >
-                <View style={tw`flex-1 justify-center items-center bg-gray-100 p-6`}>
-                    <ScrollView style={tw`w-full max-w-md`}>
-                        <Text style={tw`text-lg`}>{termsText}</Text>
-                    </ScrollView>
-                    <Button title="Stäng" onPress={() => setTermsVisible(false)} />
-                </View>
-            </Modal>
+                <Icon name="check-circle" size={20} color="white" />
+                <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>
+                    Testa AsyncStorage och Firebase
+                </Text>
+            </TouchableOpacity>
+
+            {/* Display test results */}
+            {testResult ? (
+                <Text style={tw`text-sm text-center text-gray-700 mt-4`}>{testResult}</Text>
+            ) : null}
         </View>
     );
     

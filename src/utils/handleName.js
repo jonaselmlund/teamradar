@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc, deleteDoc, updateDoc, collection, addDoc, query, w
 import uuid from 'react-native-uuid';
 import * as Location from 'expo-location';
 import { Alert } from 'react-native';
-import { startTrackingPosition, toggleTracking } from "./teamUtils"; // Import from teamUtils.js
+import { startTrackingPosition, toggleTracking, stopTrackingPosition } from "./teamUtils"; // Import from teamUtils.js
 
 export const fetchUsernameFromFirestore = async (setStoredName, setTeam, setTeamName) => {
     try {

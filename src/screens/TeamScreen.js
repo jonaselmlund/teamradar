@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, Switch, Alert, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
-import { fetchUserData, fetchTeamData, createTeam, joinTeam, deleteTeam, updateTeamName } from '../utils/teamUtils';
+import { fetchUserData, fetchTeamData, createTeam, joinTeam, deleteTeam, updateTeamName, stopTrackingPosition } from '../utils/teamUtils';
 import { fetchMembers, removeUserFromTeam, toggleAdminStatus, createTestUser } from '../utils/memberUtils';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -20,6 +20,7 @@ const TeamScreen = () => {
     const [user, setUser] = useState(null);
     const [infoModalVisible, setInfoModalVisible] = useState(false);
     const navigation = useNavigation();
+    
 
     useEffect(() => {
         fetchUserData(setUser);
@@ -73,7 +74,7 @@ const TeamScreen = () => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-2 flex-row justify-center items-center`}
-                        onPress={() => navigation.navigate('ExtraFunctionsScreen', { teamMembers: members })}
+                        onPress={() => navigation.navigate('ExtraFunctionsScreen', { teamMembers: members, teamId: team.id })}
                     >
                         <Icon name="functions" size={20} color="white" />
                         <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Extra Funktioner</Text>

@@ -22,21 +22,43 @@ const MapScreen = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, 'users'));
-                const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const userId = await AsyncStorage.getItem('userId');
+                if (!userId) return;
 
-                console.log("Fetched Users:", usersData);
+                // Fetch the current user's team ID
+                const userRef = doc(db, 'users', userId);
+                const userDoc = await getDoc(userRef);
+                if (!userDoc.exists() || !userDoc.data().teamId) {
+                    console.log('User is not part of a team.');
+                    return;
+                }
 
-                const validUsers = usersData.filter(user => 
+                const teamId = userDoc.data().teamId;
+
+                // Fetch users who are part of the same team
+                const teamUsersQuery = query(
+                    collection(db, 'users'),
+                    where('teamId', '==', teamId)
+                );
+                const querySnapshot = await getDocs(teamUsersQuery);
+                const usersData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                console.log('Fetched Team Users:', usersData);
+
+                // Filter users with valid coordinates
+                const validUsers = usersData.filter(user =>
+                    user.trackingState !== false && // Exclude users with tracking disabled
                     user.latitude !== undefined &&
                     user.longitude !== undefined &&
                     !isNaN(user.latitude) &&
-                    !isNaN(user.longitude) &&
-                    user.trackingState !== false // Filter out users with trackingState set to false
+                    !isNaN(user.longitude)
                 );
                 setUsers(validUsers);
             } catch (error) {
-                console.error('Error fetching users:', error);
+                console.error('Error fetching team users:', error);
             }
         };
 
@@ -208,16 +230,22 @@ const MapScreen = () => {
                 user.latitude,
                 user.longitude
             );
+
+            // Format the timestamp if it exists
+            const lastUpdated = user.timestamp
+                ? new Date(user.timestamp).toLocaleString()
+                : 'N/A';
+
             Alert.alert(
                 user.username,
-                `Avstånd: ${distance.toFixed(0)} meter`,
-                [{ text: "Close" }]
+                `Avstånd: ${distance.toFixed(0)} meter\nSenast uppdaterad: ${lastUpdated}`,
+                [{ text: "Stäng" }]
             );
         } else {
             Alert.alert(
                 user.username,
-                "Avstånd: N/A",
-                [{ text: "Close" }]
+                "Avstånd: N/A\nSenast uppdaterad: N/A",
+                [{ text: "Stäng" }]
             );
         }
     };

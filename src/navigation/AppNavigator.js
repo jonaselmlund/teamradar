@@ -6,8 +6,9 @@ import MapScreen from '../screens/MapScreen';
 import TeamScreen from '../screens/TeamScreen';
 import UsernameScreen from '../screens/UsernameScreen';
 import ExtraFunctionsScreen from '../screens/ExtraFunctionsScreen';
-import UserSettingsScreen from '../screens/UserSettingsScreen'; // Add this import
+import UserSettingsScreen from '../screens/UserSettingsScreen';
 import ExtraFunctionsScreen from './src/screens/ExtraFunctionsScreen';
+import EconomyScreen from './src/screens/EconomyScreen';
 
 const Stack = createStackNavigator();
 

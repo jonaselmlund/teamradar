@@ -1,3 +1,16 @@
+# att kolla:
+om hendlename sparas i local storage
+varför team inte skapas i firebase
+varför termsbilden inte scrollas.
+qr kod scanning funkar inte
+
+
+#index 2 st skapade:
+Collection ID	Fields indexed
+Query scope		Status	
+messages	teamId Ascending timestamp Ascending __name__ Ascending	Collection		Enabled	
+users	teamId Ascending trackingState Ascending __name__ Ascending	Collection		Enabled	
+
 # teamradar
 expo start -c 
 är bäst då rensar man 

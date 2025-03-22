@@ -1,6 +1,7 @@
 import { collection, addDoc, doc, updateDoc, getDoc, onSnapshot, deleteDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stopTrackingPosition } from "./teamUtils";
 
 export const fetchMembers = (teamId, setMembers) => {
     const unsubscribe = onSnapshot(collection(db, "teams", teamId, "members"), (snapshot) => {

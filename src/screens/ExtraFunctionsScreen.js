@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import tw from 'twrnc';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig'; // Se till att Firebase är korrekt konfigurerat
 
 const ExtraFunctionsScreen = ({ route }) => {
-    const { teamMembers = [], teamEconomyEnabled = false } = route.params; // Default values
+    const { teamMembers = [], teamId = null } = route.params || {}; // Fallback för teamId
     const [groups, setGroups] = useState([]);
+    const [teamEconomyEnabled, setTeamEconomyEnabled] = useState(false);
     const navigation = useNavigation();
+
+    useEffect(() => {
+        const fetchTeamEconomyStatus = async () => {
+            try {
+                if (!teamId) {
+                    console.error('teamId saknas');
+                    return;
+                }
+
+                const teamRef = doc(db, 'teams', teamId);
+                const teamDoc = await getDoc(teamRef);
+
+                if (teamDoc.exists()) {
+                    const data = teamDoc.data();
+                    setTeamEconomyEnabled(data.teamEconomyEnabled || false); // Sätt värdet från Firebase
+                } else {
+                    console.error('Team-dokumentet finns inte i Firebase.');
+                }
+            } catch (error) {
+                console.error('Fel vid hämtning av team-ekonomi-status:', error);
+            }
+        };
+
+        fetchTeamEconomyStatus();
+    }, [teamId]);
+
+    console.log('Route params:', route.params); // Logga för felsökning
 
     const pickRandomMember = () => {
         if (teamMembers.length === 0) {
@@ -45,6 +75,7 @@ const ExtraFunctionsScreen = ({ route }) => {
                 <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Välj en slumpmässig teammedlem</Text>
             </TouchableOpacity>
 
+            {/* Skapa 2 grupper */}
             {teamMembers.length > 2 && (
                 <TouchableOpacity
                     style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
@@ -53,6 +84,8 @@ const ExtraFunctionsScreen = ({ route }) => {
                     <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 2 grupper av teamet</Text>
                 </TouchableOpacity>
             )}
+
+            {/* Skapa 3 grupper */}
             {teamMembers.length > 3 && (
                 <TouchableOpacity
                     style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
@@ -61,7 +94,9 @@ const ExtraFunctionsScreen = ({ route }) => {
                     <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 3 grupper av teamet</Text>
                 </TouchableOpacity>
             )}
-            {teamMembers.length > 3 && (
+
+            {/* Skapa 4 grupper */}
+            {teamMembers.length > 4 && (
                 <TouchableOpacity
                     style={tw`bg-blue-500 p-2 rounded-lg shadow-md mb-4 flex-row justify-center items-center`}
                     onPress={() => createGroups(4)}
@@ -69,6 +104,7 @@ const ExtraFunctionsScreen = ({ route }) => {
                     <Text style={tw`text-white text-center text-sm font-semibold ml-2`}>Skapa 4 grupper av teamet</Text>
                 </TouchableOpacity>
             )}
+
             {groups.length > 0 && (
                 <View>
                     <Text style={tw`text-lg mb-4 text-center`}>Grupper</Text>
